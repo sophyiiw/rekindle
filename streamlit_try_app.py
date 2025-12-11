@@ -194,8 +194,8 @@ def halaman_depan_split():
         st.write("") 
         
         # Judul Besar (Menggantikan "Selamat Datang" standar)
-        st.markdown('<div class="hero-title">Selamat Datang</div>', unsafe_allow_html=True)
-        st.markdown('<div class="hero-subtitle">Nyalakan Kembali Momen Berhargamu.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="hero-title">Hi! Precious People</div>', unsafe_allow_html=True)
+        st.markdown('<div class="hero-subtitle">Eco Aromatherapy Candle Since 2025.</div>', unsafe_allow_html=True)
         
         # Pilihan Login / Daftar menggunakan Tabs (Lebih bersih dari sidebar)
         tab_login, tab_daftar = st.tabs(["Login Akun", "Daftar Baru"])
@@ -249,7 +249,7 @@ def halaman_depan_split():
         <div class="right-image-container">
             <div class="glass-card">
                 <div class="glass-text-title">
-                    Kualitas Emas untuk Suasana Ruang Anda
+                    Light Up, Breathe Easy From Waste to Wellness 
                 </div>
                 <div class="glass-text-body">
                     Koleksi lilin aromaterapi kami dirancang untuk menciptakan ketenangan dan estetika terbaik. Temukan wangi favoritmu sekarang.
