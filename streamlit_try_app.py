@@ -294,26 +294,36 @@ def menu_admin():
 def menu_pembeli(user):
     st.sidebar.title(f"Halo, {user}")
     menu = st.sidebar.selectbox("Menu:", ["Katalog", "Keranjang", "Logout"])
-   if menu == "Katalog":
-        # Gunakan HTML untuk Judul agar warnanya Hitam
+    
+    # ==========================
+    # HALAMAN KATALOG
+    # ==========================
+    if menu == "Katalog":
+        # Judul Halaman (Warna Hitam)
         st.markdown("<h1 style='color: #000000;'>Katalog Produk</h1>", unsafe_allow_html=True)
         
         cols = st.columns(3)
         for i, p in enumerate(st.session_state['produk_list']):
             with cols[i%3]:
+                # Gambar Produk
                 st.image(p.img_url)
                 
-                # Gunakan HTML untuk Nama Produk & Harga (Hitam & Rata Tengah)
+                # Nama Produk & Harga (Warna Hitam & Rata Tengah)
                 st.markdown(f"""
                 <div style="text-align: center; margin-top: 5px;">
                     <div style="font-weight: bold; font-size: 1.1rem; color: #000000;">{p.get_nama()}</div>
-                    <div style="color: #333333; margin-bottom: 10px;">Rp {p.get_harga()}</div>
+                    <div style="color: #333333; margin-bottom: 15px;">Rp {p.get_harga()}</div>
                 </div>
                 """, unsafe_allow_html=True)
                 
+                # Tombol Beli
                 if st.button("Beli", key=f"b_{i}"):
                     st.session_state['keranjang'].append({"nama": p.get_nama(), "harga": p.get_harga()})
                     st.toast("Masuk Keranjang!")
+
+    # ==========================
+    # HALAMAN KERANJANG
+    # ==========================
     elif menu == "Keranjang":
         st.title("Your Cart")
         
@@ -333,21 +343,18 @@ def menu_pembeli(user):
                 st.subheader("Product List")
                 st.markdown("---")
                 
-                # Helper: Cari URL gambar berdasarkan nama produk di katalog
+                # Helper: Cari URL gambar berdasarkan nama produk
                 def get_img_by_name(nama_dicari):
-                    # Mencari di database produk_list yang sudah ada
                     for p in st.session_state['produk_list']:
                         if p.get_nama() == nama_dicari:
                             return p.img_url
-                    return "https://via.placeholder.com/150" # Fallback image
+                    return "https://via.placeholder.com/150" 
 
                 # Loop item di keranjang
                 for i, item in enumerate(cart_items):
-                    # Grid kecil untuk setiap baris item
                     c1, c2, c3, c4 = st.columns([1.5, 3, 2, 1])
                     
                     with c1:
-                        # Tampilkan gambar thumbnail
                         img_src = get_img_by_name(item['nama'])
                         st.markdown(f"""
                         <div style="border-radius: 10px; overflow: hidden; height: 80px; width: 80px;">
@@ -363,10 +370,9 @@ def menu_pembeli(user):
                         st.markdown(f"**Rp {item['harga']:,}**")
                         
                     with c4:
-                        # Tombol Hapus (X)
                         if st.button("✕", key=f"del_{i}"):
-                            cart_items.pop(i) # Hapus dari list
-                            st.rerun()        # Refresh halaman
+                            cart_items.pop(i) 
+                            st.rerun()      
                     
                     st.markdown("---") 
 
@@ -378,37 +384,10 @@ def menu_pembeli(user):
                     <hr style="border-top: 1px solid #ccc;">
                 """, unsafe_allow_html=True)
                 
-                # Hitung Total
                 total_belanja = sum(item['harga'] for item in cart_items)
                 
-                # Rincian Biaya
                 c_sub1, c_sub2 = st.columns(2)
                 with c_sub1: st.write("Subtotal")
-                with c_sub2: st.write(f"Rp {total_belanja:,}")
-                
-                c_ship1, c_ship2 = st.columns(2)
-                with c_ship1: st.write("Shipping")
-                with c_ship2: st.write("Free")
-                
-                st.markdown("<hr style='border-top: 1px solid #ccc; margin: 10px 0;'>", unsafe_allow_html=True)
-                
-                # Total Akhir
-                c_tot1, c_tot2 = st.columns(2)
-                with c_tot1: st.markdown("##### Total")
-                with c_tot2: st.markdown(f"##### Rp {total_belanja:,}")
-                
-                st.write("")
-                
-                # Tombol Checkout
-                if st.button("PROCEED TO CHECKOUT", use_container_width=True):
-                    st.balloons()
-                    st.success("Terima kasih! Pesanan Anda sedang diproses.")
-                    st.session_state['keranjang'] = [] # Kosongkan keranjang
-                    # st.rerun() # Uncomment jika ingin auto-refresh
-                
-                st.markdown("</div>", unsafe_allow_html=True)
-    elif menu == "Logout":
-        st.session_state['user_role'] = None; st.rerun()
 
 # ============================
 # 6. MAIN PROGRAM
