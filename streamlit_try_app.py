@@ -129,13 +129,12 @@ st.markdown("""
         border: 1px solid rgba(255, 255, 255, 0.8);
     }
     .glass-text-title {
-        font-size: 1.8rem; font-weight: 700; color: #1A1A1A; margin-bottom: 10px;
+        font-size: 1.8rem; font-weight: 700; color: #000000; margin-bottom: 10px;
     }
     .glass-text-body {
         font-size: 1rem; color: #333333;
     }
-    
-    .hero-title { font-size: 3rem; font-weight: 700; color: #1A1A1A; }
+    .hero-title { font-size: 3rem; font-weight: 700; color: #000000; }
     .hero-subtitle { font-size: 1.1rem; color: #555555; margin-bottom: 2rem; }
     
     .block-container { padding-top: 2rem; max-width: 100%; }
