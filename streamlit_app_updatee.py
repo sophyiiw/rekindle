@@ -296,17 +296,17 @@ def halaman_depan_split():
         st.rerun()
 # ============================
 # 6. HALAMAN PEMBELI
-# ============================
-# ============================
-# 6. HALAMAN PEMBELI (DIPERBAIKI)
-# ============================
-# ============================
-# 6. HALAMAN PEMBELI (FULL FIX)
-# ============================
-def menu_pembeli(user):
-    st.sidebar.title(f"Halo, {user}")
-    menu = st.sidebar.selectbox("Menu:", ["Katalog", "Keranjang", "Pesanan Saya", "Pusat Bantuan", "Logout"])
+
+def menu_pembeli():
+    user_login = st.session_state.current_user
+    st.sidebar.title(f"Halo, {user_login}")
+    menu = st.sidebar.radio("Menu Pembeli:", ["Belanja", "Keranjang & Bayar", "Pesanan Saya", "Pusat Bantuan"])
     
+    if st.sidebar.button("Logout"):
+        # Reset keranjang saat logout (opsional, tapi bagus utk UX)
+        st.session_state.keranjang = [] 
+        st.session_state.login_status = False
+        st.rerun()
     # --- KATALOG ---
     if menu == "Katalog":
         st.markdown("<h1 style='color: #000000;'>Katalog Produk</h1>", unsafe_allow_html=True)
@@ -617,6 +617,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
