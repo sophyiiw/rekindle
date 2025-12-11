@@ -3,54 +3,67 @@ import csv
 import os
 
 # ============================
-# 1. KONFIGURASI HALAMAN (WAJIB PALING ATAS)
+# 1. KONFIGURASI HALAMAN
 # ============================
 st.set_page_config(
     page_title="Rekindle Candle Shop",
     page_icon="🕯️",
-    layout="wide", # Layout wide agar bisa Split Screen penuh
-    initial_sidebar_state="collapsed" # Sidebar disembunyikan di halaman login agar mirip referensi
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
 # ============================
-# 2. CSS STYLING (ESTETIKA & VISUAL)
+# 2. CSS STYLING (PERBAIKAN WARNA TEKS)
 # ============================
-# Kita suntikkan CSS untuk meniru gaya visual referensi:
-# - Background Cream
-# - Tombol Hitam Bulat
-# - Input Field Bersih
-# - Efek Glassmorphism (Kaca Blur)
 st.markdown("""
 <style>
-    /* IMPORT FONT KEREN (Opsional, pakai default juga oke tapi ini lebih mirip) */
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
 
     html, body, [class*="css"] {
         font-family: 'Poppins', sans-serif;
     }
 
-    /* BACKGROUND UTAMA CREAM KALEM */
+    /* BACKGROUND UTAMA CREAM */
     .stApp {
-        background-color: #FAF9F6; /* Warna Cream mirip referensi */
+        background-color: #FAF9F6;
     }
 
-    /* INPUT FIELD STYLING (Kotak isian username/password) */
+    /* --- PERBAIKAN 1: INPUT FIELD & PLACEHOLDER --- */
+    /* Warna teks saat mengetik */
+    .stTextInput input {
+        color: #333333 !important; 
+    }
+    /* Warna placeholder (teks samar "Masukkan username...") */
+    .stTextInput input::placeholder {
+        color: #666666 !important;
+        opacity: 1;
+    }
+    /* Kotak Input */
     .stTextInput > div > div {
         background-color: #FFFFFF;
-        border: 1px solid #E0E0E0;
-        border-radius: 12px; /* Sudut membulat */
-        padding: 5px;
-        box-shadow: none;
+        border: 1px solid #D1D1D1;
+        border-radius: 12px;
+        color: #333333;
     }
-    .stTextInput > div > div:focus-within {
-        border-color: #333333; /* Warna border saat diklik */
+    
+    /* --- PERBAIKAN 2: WARNA TAB (LOGIN/DAFTAR) --- */
+    /* Warna teks tab yang tidak aktif */
+    button[data-baseweb="tab"] {
+        color: #666666 !important; 
+        font-weight: 400;
+    }
+    /* Warna teks tab yang sedang dipilih (Aktif) */
+    button[data-baseweb="tab"][aria-selected="true"] {
+        color: #000000 !important; 
+        font-weight: 700;
+        border-bottom-color: #000000 !important;
     }
 
     /* TOMBOL STYLING (Hitam Elegan) */
     .stButton > button {
-        background-color: #000000 !important; /* Hitam pekat */
+        background-color: #2C2C2C !important;
         color: #FFFFFF !important;
-        border-radius: 30px; /* Sangat bulat seperti pil */
+        border-radius: 30px;
         padding: 0.6rem 2rem;
         font-weight: 600;
         width: 100%;
@@ -58,67 +71,68 @@ st.markdown("""
         transition: transform 0.2s;
     }
     .stButton > button:hover {
-        transform: scale(1.02); /* Efek zoom sedikit saat hover */
-        background-color: #333333 !important;
+        transform: scale(1.02);
+        background-color: #000000 !important;
     }
 
-    /* HEADER TEXT STYLING */
+    /* HEADER TEXT KIRI */
     .hero-title {
         font-size: 3rem;
         font-weight: 700;
-        color: #1A1A1A;
+        color: #1A1A1A; /* Hitam pekat */
         margin-bottom: 0.5rem;
     }
     .hero-subtitle {
         font-size: 1rem;
-        color: #666666;
+        color: #555555; /* Abu tua */
         margin-bottom: 2rem;
         font-weight: 300;
     }
 
-    /* CONTAINER GAMBAR KANAN (CSS Khusus untuk layout gambar penuh) */
+    /* CONTAINER GAMBAR KANAN */
     .right-image-container {
         position: relative;
         width: 100%;
-        height: 90vh; /* Tinggi hampir layar penuh */
+        height: 90vh;
         border-radius: 20px;
         overflow: hidden;
-        background-image: url('https://images.unsplash.com/photo-1495333241851-4c601735955a?q=80&w=1974&auto=format&fit=crop'); /* Gambar Tanaman/Estetik */
+        /* Gambar background estetik */
+        background-image: url('https://images.unsplash.com/photo-1602523961358-f9f03dd557db?q=80&w=1000&auto=format&fit=crop'); 
         background-size: cover;
         background-position: center;
     }
 
-    /* EFEK KACA (GLASSMORPHISM) DI ATAS GAMBAR */
+    /* --- PERBAIKAN 3: TEKS PADA GLASS CARD (KANAN) --- */
     .glass-card {
         position: absolute;
         top: 50%;
-        right: -50px; /* Geser sedikit agar artistik */
+        right: -50px;
         transform: translateY(-50%);
         width: 80%;
-        background: rgba(255, 255, 255, 0.15); /* Putih transparan */
-        backdrop-filter: blur(15px); /* Efek Blur Kuat */
-        -webkit-backdrop-filter: blur(15px);
+        /* Background kartu dibuat lebih putih susu agar teks gelap terbaca */
+        background: rgba(255, 255, 255, 0.65); 
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
         padding: 40px;
         border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        color: white;
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
     }
     
     .glass-text-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin-bottom: 10px;
-        color: #FFFFFF;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+        color: #1A1A1A; /* UBAH KE HITAM/GELAP */
+        line-height: 1.2;
     }
     .glass-text-body {
-        font-size: 0.9rem;
+        font-size: 1rem;
         line-height: 1.6;
-        color: #F0F0F0;
+        color: #333333; /* UBAH KE ABU TUA */
+        font-weight: 400;
     }
 
-    /* Menghilangkan padding default Streamlit yang berlebihan */
     .block-container {
         padding-top: 2rem;
         padding-bottom: 0rem;
@@ -127,13 +141,13 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Gambar untuk produk (Placeholder)
+# Placeholder Gambar Produk
 IMG_LAVENDER = "https://images.unsplash.com/photo-1602523961358-f9f03dd557db?w=400&q=80"
 IMG_VANILLA = "https://images.unsplash.com/photo-1603006905003-be475563bc59?w=400&q=80"
 IMG_SANDALWOOD = "https://images.unsplash.com/photo-1596433809252-260c2745dfdd?w=400&q=80"
 
 # ============================
-# 3. CLASS & DATABASE (LOGIKA TIDAK DIUBAH)
+# 3. CLASS & DATABASE
 # ============================
 class User:
     def __init__(self, username, password, role):
@@ -154,8 +168,7 @@ class ProdukLilin:
     def set_harga(self, harga_baru): self._harga = harga_baru
     def set_stok(self, stok_baru): self._stok = stok_baru
     def kurangi_stok(self, jumlah): self._stok = self._stok - jumlah
-    def info(self):
-        st.write(f"**{self._nama}** - Stok: {self._stok}")
+    def info(self): st.write(f"**{self._nama}** - Stok: {self._stok}")
 
 def init_state():
     if 'users_db' not in st.session_state:
@@ -179,33 +192,30 @@ def init_state():
 init_state()
 
 # ============================
-# 4. HALAMAN DEPAN MODEL BARU (SPLIT SCREEN)
+# 4. HALAMAN DEPAN (VISUAL DIPERBAIKI)
 # ============================
 def halaman_depan_split():
-    # Membuat 2 kolom: Kiri (Form) dan Kanan (Gambar)
-    # Rasio [1, 1.2] agar gambar kanan sedikit lebih lebar
     col_kiri, col_kanan = st.columns([1, 1.2], gap="large")
 
-    # --- KOLOM KIRI: FORMULIR ---
+    # --- KOLOM KIRI ---
     with col_kiri:
-        # Spacer agar konten turun sedikit ke tengah vertikal
         st.write("") 
         st.write("") 
         st.write("") 
         
-        # Judul Besar (Menggantikan "Selamat Datang" standar)
-        st.markdown('<div class="hero-title">Hi! Precious People</div>', unsafe_allow_html=True)
-        st.markdown('<div class="hero-subtitle">Eco Aromatherapy Candle Since 2025.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="hero-title">Selamat Datang</div>', unsafe_allow_html=True)
+        st.markdown('<div class="hero-subtitle">Nyalakan Kembali Momen Berhargamu.</div>', unsafe_allow_html=True)
         
-        # Pilihan Login / Daftar menggunakan Tabs (Lebih bersih dari sidebar)
+        # Tabs untuk Login/Register
         tab_login, tab_daftar = st.tabs(["Login Akun", "Daftar Baru"])
         
         with tab_login:
-            st.markdown("### Login Area")
+            st.write("")
             with st.form("login_form"):
-                username = st.text_input("Username", placeholder="Masukkan username...")
-                password = st.text_input("Password", type="password", placeholder="Masukkan password...")
-                st.write("") # Jarak
+                username = st.text_input("Username", placeholder="Masukkan username...", label_visibility="collapsed")
+                st.write("")
+                password = st.text_input("Password", type="password", placeholder="Masukkan password...", label_visibility="collapsed")
+                st.write("")
                 submitted = st.form_submit_button("Masuk")
                 
                 if submitted:
@@ -221,10 +231,11 @@ def halaman_depan_split():
                         st.rerun()
 
         with tab_daftar:
-            st.markdown("### Daftar Akun Baru")
+            st.write("")
             with st.form("reg_form"):
-                username_baru = st.text_input("Username baru", placeholder="Buat username unik...")
-                password_baru = st.text_input("Password baru", type="password")
+                username_baru = st.text_input("Username baru", placeholder="Buat username unik...", label_visibility="collapsed")
+                st.write("")
+                password_baru = st.text_input("Password baru", type="password", placeholder="Buat password...", label_visibility="collapsed")
                 st.write("")
                 submitted = st.form_submit_button("Daftar Sekarang")
                 
@@ -237,35 +248,31 @@ def halaman_depan_split():
                         st.session_state['users_db'][username_baru] = User(username_baru, password_baru, "pembeli")
                         st.success("Akun berhasil dibuat! Silakan Login.")
         
-        # Kontak info kecil di bawah (mirip referensi)
-        st.write("")
         st.write("")
         st.caption("Butuh bantuan? Hubungi support@rekindle.com")
 
-    # --- KOLOM KANAN: GAMBAR & OVERLAY GLASSMORPHISM ---
+    # --- KOLOM KANAN (GLASS CARD) ---
     with col_kanan:
-        # Menggunakan HTML Murni agar bisa positioning overlay di atas gambar
         st.markdown("""
         <div class="right-image-container">
             <div class="glass-card">
                 <div class="glass-text-title">
-                    Light Up, Breathe Easy From Waste to Wellness 
+                    Light Up, Breathe Easy From Waste to Wellness
                 </div>
                 <div class="glass-text-body">
-                    Koleksi lilin aromaterapi kami dirancang untuk menciptakan ketenangan dan estetika terbaik. Temukan wangi favoritmu sekarang.
+                    Koleksi lilin aromaterapi kami dirancang untuk menciptakan 
+                    ketenangan dan estetika terbaik. Temukan wangi favoritmu sekarang.
                 </div>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
 # ============================
-# 5. HALAMAN UTAMA SETELAH LOGIN (Admin & Pembeli)
+# 5. HALAMAN UTAMA (SESUDAH LOGIN)
 # ============================
-# (Bagian ini tidak saya ubah logikanya, hanya strukturnya agar tetap jalan)
-
 def menu_admin():
     st.sidebar.title("Admin Menu")
-    menu = st.sidebar.selectbox("Pilih:", ["Stok Gudang", "Tambah Produk", "Logout"])
+    menu = st.sidebar.selectbox("Pilih:", ["Stok Gudang", "Logout"])
     if menu == "Stok Gudang":
         st.title("Stok Gudang")
         for p in st.session_state['produk_list']: p.info()
@@ -286,17 +293,18 @@ def menu_pembeli(user):
                 if st.button("Beli", key=f"b_{i}"):
                     st.session_state['keranjang'].append({"nama": p.get_nama(), "harga": p.get_harga()})
                     st.toast("Masuk Keranjang!")
+    elif menu == "Keranjang":
+        st.title("Keranjang")
+        st.write(st.session_state['keranjang'])
     elif menu == "Logout":
         st.session_state['user_role'] = None; st.rerun()
 
 # ============================
-# 6. MAIN EXECUTION
+# 6. MAIN PROGRAM
 # ============================
 def main():
     role = st.session_state['user_role']
-    
     if role is None:
-        # Panggil halaman depan baru yang Aesthetic
         halaman_depan_split()
     elif role == "admin":
         menu_admin()
