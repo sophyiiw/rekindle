@@ -283,7 +283,8 @@ def menu_admin():
 # ============================
 # 6. HALAMAN PEMBELI
 # ============================
-def menu_pembeli(user):
+
+def menu_pembeli(user): # <-- Pastikan parameter 'user' ada di sini
     st.sidebar.title(f"Halo, {user}")
     menu = st.sidebar.selectbox("Menu:", ["Katalog", "Keranjang", "Pesanan Saya", "Pusat Bantuan", "Logout"])
     
@@ -294,8 +295,12 @@ def menu_pembeli(user):
         for i, p in enumerate(st.session_state['produk_list']):
             with cols[i%3]:
                 st.image(p.img_url)
-                st.markdown(f"<div style='color: #000; font-weight: bold;'>{p.get_nama()}</div>", unsafe_allow_html=True)
-                st.markdown(f"<div style='color: #333;'>Rp {p.get_harga()} | Stok: {p.get_stok()}</div>", unsafe_allow_html=True)
+                st.markdown(f"""
+                <div style="text-align: left; margin-top: 5px;">
+                    <div style="font-weight: bold; font-size: 1.1rem; color: #000000;">{p.get_nama()}</div>
+                    <div style="color: #333333;">Rp {p.get_harga()} | Stok: {p.get_stok()}</div>
+                </div>
+                """, unsafe_allow_html=True)
                 
                 with st.form(key=f"f_{i}"):
                     qty = st.number_input("Qty", 1, max(1, p.get_stok()), key=f"q_{i}")
@@ -303,9 +308,9 @@ def menu_pembeli(user):
                         if p.get_stok() < qty: st.error("Stok Kurang!")
                         else:
                             st.session_state['keranjang'].append({
-                                "obj_produk": p, 
+                                "obj_produk": p,
                                 "nama": p.get_nama(), 
-                                "harga": p.get_harga(), 
+                                "harga": p.get_harga(),
                                 "qty": int(qty)
                             })
                             st.toast("Masuk Keranjang!")
@@ -314,49 +319,53 @@ def menu_pembeli(user):
     elif menu == "Keranjang":
         st.markdown("<h1 style='color: #000000;'>Your Cart</h1>", unsafe_allow_html=True)
         cart = st.session_state['keranjang']
-        
         if not cart:
             st.info("Keranjang Kosong.")
         else:
             col_kiri, col_kanan = st.columns([2, 1], gap="large")
-            
             with col_kiri:
                 st.markdown("<h3 style='color: #000000;'>Product List</h3>", unsafe_allow_html=True)
+                st.markdown("---")
                 for i, item in enumerate(cart):
                     c1, c2, c3, c4 = st.columns([1.5, 3, 2, 1])
                     with c1: st.image(item['obj_produk'].img_url, width=80)
                     with c2: 
-                        st.markdown(f"<div style='color: #000;'><b>{item['nama']}</b></div>", unsafe_allow_html=True)
-                        st.markdown(f"<div style='color: #555;'>Qty: {item['qty']}</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='color: #000000; font-weight: bold;'>{item['nama']}</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='color: #555555; font-size: 0.9em;'>Qty: {item['qty']}</div>", unsafe_allow_html=True)
                     with c3: 
-                        st.markdown(f"<div style='color: #000;'><b>Rp {item['harga']*item['qty']:,}</b></div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='color: #000000; font-weight: bold;'>Rp {item['harga'] * item['qty']:,}</div>", unsafe_allow_html=True)
                     with c4:
-                        if st.button("X", key=f"d_{i}"): cart.pop(i); st.rerun()
+                        if st.button("✕", key=f"d_{i}"): cart.pop(i); st.rerun()
                     st.markdown("---")
 
             with col_kanan:
-                subtotal = sum(item['harga'] * item['qty'] for item in cart)
                 total_qty = sum(item['qty'] for item in cart)
-                diskon = 0.1 if total_qty >= 3 else 0
-                potongan = subtotal * diskon
-                
-                st.markdown("""<div style="background:#F3F3F3; padding:20px; border-radius:10px;"><h4 style="color:#000; margin-top:0;">Cart Totals</h4><hr></div>""", unsafe_allow_html=True)
-                st.markdown(f"<div style='color:#000;'>Subtotal: Rp {subtotal:,}</div>", unsafe_allow_html=True)
-                if diskon > 0: st.success(f"Diskon 10%: -Rp {int(potongan):,}")
-                st.markdown(f"<div style='color:#000; font-weight:bold; font-size:1.2em; margin-top:10px;'>Total: Rp {int(subtotal-potongan):,}</div>", unsafe_allow_html=True)
+                subtotal = sum(item['harga'] * item['qty'] for item in cart)
+                diskon_persen = 0
+                if total_qty >= 5: diskon_persen = 20
+                elif total_qty >= 3: diskon_persen = 10
+                potongan = subtotal * (diskon_persen / 100)
+                total_akhir = subtotal - potongan
+
+                st.markdown("""<div style="background-color: #F3F3F3; padding: 25px; border-radius: 15px; color: #333;"><h4 style="margin-top:0; color: #000;">Cart Totals</h4><hr style="border-top: 1px solid #ccc;"></div>""", unsafe_allow_html=True)
+                st.markdown(f"<div style='color: #000000;'>Subtotal: Rp {subtotal:,}</div>", unsafe_allow_html=True)
+                if diskon_persen > 0: st.success(f"Diskon {diskon_persen}%: -Rp {int(potongan):,}")
+                else: st.caption("Beli min 3 items dapat diskon!")
+                st.markdown(f"<div style='color: #000000; font-weight: bold; margin-top: 10px; font-size: 1.1em;'>Total: Rp {int(total_akhir):,}</div>", unsafe_allow_html=True)
                 
                 if st.button("Checkout Sekarang"):
                     for item in cart:
                         item['obj_produk'].kurangi_stok(item['qty'])
                         st.session_state['riwayat_transaksi'].append({
-                            "pembeli": user, 
+                            "pembeli": user,
                             "barang": item['nama'],
-                            "qty": item['qty'], 
-                            "total": int(item['harga']*item['qty']),
+                            "qty": item['qty'],
+                            "total": int(item['harga'] * item['qty']),
                             "status": "Diproses"
                         })
                     st.session_state['keranjang'] = []
-                    st.balloons(); st.success("Sukses! Pembayaran Berhasil."); st.rerun()
+                    st.balloons()
+                    st.success("Pembayaran Berhasil!"); st.rerun()
 
     # --- PESANAN SAYA ---
     elif menu == "Pesanan Saya":
@@ -364,22 +373,61 @@ def menu_pembeli(user):
         found = False
         for t in st.session_state['riwayat_transaksi']:
             if t['pembeli'] == user:
-                st.info(f"{t['barang']} (x{t['qty']}) | Total: Rp {t['total']:,} | Status: [{t['status']}]")
+                st.info(f"{t['barang']} (x{t['qty']}) | Total: Rp {t['total']} | Status: [{t['status']}]")
                 found = True
-        
-        if not found:
-            st.info("Belum ada riwayat pesanan.")
+        if not found: st.write("Belum ada riwayat pesanan.")
 
+    # --- PUSAT BANTUAN (DISESUAIKAN) ---
     elif menu == "Pusat Bantuan":
-        st.title("Bantuan")
-        txt = st.text_area("Pesan"); 
-        if st.button("Kirim"): 
-            st.session_state['inbox_laporan'].append({"pengirim": user, "pesan": txt, "jawaban": "Belum dibalas"})
-            st.success("Terkirim")
+        st.markdown("<h1 style='color: #000000;'>Pusat Bantuan</h1>", unsafe_allow_html=True)
+        
+        tab_tulis, tab_riwayat = st.tabs(["Tulis Laporan", "Lihat Balasan"])
+        
+        with tab_tulis:
+            st.write("Sampaikan keluhan atau pertanyaan Anda kepada admin.")
+            with st.form("form_laporan"):
+                pesan_user = st.text_area("Tulis pesan Anda di sini:", height=150)
+                btn_kirim = st.form_submit_button("Kirim Laporan")
+                
+                if btn_kirim:
+                    if pesan_user.strip() == "":
+                        st.warning("Pesan tidak boleh kosong.")
+                    else:
+                        st.session_state['inbox_laporan'].append({
+                            "pengirim": user,
+                            "pesan": pesan_user,
+                            "jawaban": "Belum dibalas"
+                        })
+                        st.success("Laporan berhasil dikirim ke Admin!")
+
+        with tab_riwayat:
+            st.write("")
+            found = False
+            for chat in st.session_state['inbox_laporan']:
+                if chat['pengirim'] == user:
+                    # Tampilan Pesan yang lebih rapi
+                    with st.container():
+                        st.markdown(f"""
+                        <div style="background-color: white; padding: 15px; border-radius: 10px; border: 1px solid #ddd; margin-bottom: 10px;">
+                            <strong style="color: #333;">Q (Anda):</strong><br>
+                            <span style="color: #555;">{chat['pesan']}</span>
+                            <hr style="margin: 8px 0;">
+                            <strong style="color: #333;">A (Admin):</strong><br>
+                            <span style="color: {'red' if chat['jawaban']=='Belum dibalas' else 'green'}; font-weight: bold;">
+                                {chat['jawaban']}
+                            </span>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    found = True
+            
+            if not found:
+                st.info("Belum ada riwayat laporan.")
 
     elif menu == "Logout":
-        st.session_state['user_role'] = None; st.session_state['keranjang'] = []; st.rerun()
-
+        st.session_state['keranjang'] = []
+        st.session_state['user_role'] = None
+        st.session_state['user_login'] = ""
+        st.rerun()
 # ============================
 # 7. MAIN PROGRAM
 # ============================
@@ -393,3 +441,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
