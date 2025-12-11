@@ -148,23 +148,7 @@ st.markdown("""
         object-fit: cover !important;              /* Memastikan gambar penuh & tidak gepeng */
         width: 100% !important;
         margin-bottom: 10px;
-    }
-    /* === TAMBAHAN AGAR TEKS TERBACA (HITAM) === */
-    
-    /* 1. Memaksa semua judul dan teks paragraf menjadi hitam */
-    h1, h2, h3, h4, h5, h6, p, li, span, div {
-        color: #000000 !important;
-    }
-
-    /* 2. Pengecualian: Teks di dalam tombol "Beli" biarkan Putih */
-    button p, button span, button div {
-        color: #FFFFFF !important;
-    }
-
-    /* 3. Pengecualian: Teks input (ketikan user) biarkan hitam */
-    input {
-        color: #333333 !important;
-    }
+ 
 </style>
 </style>
 """, unsafe_allow_html=True)
@@ -310,14 +294,23 @@ def menu_admin():
 def menu_pembeli(user):
     st.sidebar.title(f"Halo, {user}")
     menu = st.sidebar.selectbox("Menu:", ["Katalog", "Keranjang", "Logout"])
-    if menu == "Katalog":
-        st.title("Katalog Produk")
+   if menu == "Katalog":
+        # Gunakan HTML untuk Judul agar warnanya Hitam
+        st.markdown("<h1 style='color: #000000;'>Katalog Produk</h1>", unsafe_allow_html=True)
+        
         cols = st.columns(3)
         for i, p in enumerate(st.session_state['produk_list']):
             with cols[i%3]:
                 st.image(p.img_url)
-                st.write(f"**{p.get_nama()}**")
-                st.write(f"Rp {p.get_harga()}")
+                
+                # Gunakan HTML untuk Nama Produk & Harga (Hitam & Rata Tengah)
+                st.markdown(f"""
+                <div style="text-align: center; margin-top: 5px;">
+                    <div style="font-weight: bold; font-size: 1.1rem; color: #000000;">{p.get_nama()}</div>
+                    <div style="color: #333333; margin-bottom: 10px;">Rp {p.get_harga()}</div>
+                </div>
+                """, unsafe_allow_html=True)
+                
                 if st.button("Beli", key=f"b_{i}"):
                     st.session_state['keranjang'].append({"nama": p.get_nama(), "harga": p.get_harga()})
                     st.toast("Masuk Keranjang!")
