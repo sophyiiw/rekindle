@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 # ============================
-# 2. CSS STYLING (VISUAL TETAP SAMA)
+# 2. CSS STYLING
 # ============================
 st.markdown("""
 <style>
@@ -123,7 +123,7 @@ IMG_VANILLA = "https://i.pinimg.com/1200x/3c/23/a0/3c23a06d1d6ed7ade0b75d58d1967
 IMG_SANDALWOOD = "https://i.pinimg.com/1200x/7b/c3/9b/7bc39b94e139510186d56d134256a1c0.jpg"
 
 # ============================
-# 3. CLASS & DATABASE (GABUNGAN LOGIC & VISUAL)
+# 3. CLASS & DATABASE
 # ============================
 class User:
     def __init__(self, username, password, role):
@@ -139,7 +139,7 @@ class ProdukLilin:
         self._stok = stok
         self.img_url = img_url 
 
-    # --- Getter & Setter (Dari Logic) ---
+    # --- Getter & Setter ---
     def get_nama(self): return self._nama
     def get_harga(self): return self._harga
     def get_stok(self): return self._stok
@@ -157,7 +157,7 @@ class ProdukLilin:
         if self._stok < 5: warning = " (!!! STOK MENIPIS !!!)"
         return f"{self._nama} | Rp {self._harga} | Stok: {pesan_stok}{warning}"
 
-# --- Helper Functions (Dari Logic) ---
+# --- Helper Functions ---
 def cari_produk(nama_dicari):
     for produk in st.session_state['produk_list']:
         if produk.get_nama().lower() == nama_dicari.lower():
@@ -193,7 +193,6 @@ def init_state():
             "shifa": User("shifa", "abc", "pembeli")
         }
     if 'produk_list' not in st.session_state:
-        # Inisialisasi Data Produk dengan Gambar
         st.session_state['produk_list'] = [
             ProdukLilin("Lilin Lavender", 50000, 10, IMG_LAVENDER),
             ProdukLilin("Lilin Vanila", 45000, 3, IMG_VANILLA), 
@@ -208,7 +207,7 @@ def init_state():
 init_state()
 
 # ============================
-# 4. HALAMAN DEPAN (VISUAL TETAP SAMA)
+# 4. HALAMAN DEPAN
 # ============================
 def halaman_depan_split():
     col_kiri, col_kanan = st.columns([1, 1.2], gap="large")
@@ -284,7 +283,7 @@ def halaman_depan_split():
         """, unsafe_allow_html=True)
 
 # ============================
-# 5. HALAMAN ADMIN (FITUR LENGKAP LOGIC)
+# 5. HALAMAN ADMIN
 # ============================
 def menu_admin():
     st.sidebar.title("Admin Dashboard")
@@ -311,7 +310,6 @@ def menu_admin():
         harga = st.number_input("Harga", min_value=0, step=1000)
         stok = st.number_input("Stok Awal", min_value=0, step=1)
         if st.button("Simpan Produk"):
-            # Default image placeholder jika tambah baru
             st.session_state['produk_list'].append(ProdukLilin(nama, int(harga), int(stok), "https://via.placeholder.com/150"))
             st.success("Produk berhasil ditambahkan!")
 
@@ -418,13 +416,13 @@ def menu_admin():
         st.session_state['user_role'] = None; st.rerun()
 
 # ============================
-# 6. HALAMAN PEMBELI (VISUAL CANTIK + LOGIC LENGKAP)
+# 6. HALAMAN PEMBELI
 # ============================
 def menu_pembeli(user):
     st.sidebar.title(f"Halo, {user}")
     menu = st.sidebar.selectbox("Menu:", ["Katalog", "Keranjang", "Pesanan Saya", "Pusat Bantuan", "Logout"])
     
-    # --- KATALOG (Visual Grid + Logic Stok) ---
+    # --- KATALOG ---
     if menu == "Katalog":
         st.markdown("<h1 style='color: #000000;'>Katalog Produk</h1>", unsafe_allow_html=True)
         cols = st.columns(3)
@@ -444,14 +442,14 @@ def menu_pembeli(user):
                         if p.get_stok() < qty: st.error("Stok Kurang!")
                         else:
                             st.session_state['keranjang'].append({
-                                "obj_produk": p, # Simpan referensi objek utk logika stok
+                                "obj_produk": p,
                                 "nama": p.get_nama(), 
                                 "harga": p.get_harga(),
                                 "qty": int(qty)
                             })
                             st.toast("Masuk Keranjang!")
 
-    # --- KERANJANG (Visual Split + Logic Diskon) ---
+    # --- KERANJANG (BAGIAN YANG DIPERBAIKI INDENTASINYA) ---
     elif menu == "Keranjang":
         st.title("Your Cart")
         cart = st.session_state['keranjang']
@@ -459,4 +457,105 @@ def menu_pembeli(user):
             st.info("Keranjang Kosong.")
         else:
             col_kiri, col_kanan = st.columns([2, 1], gap="large")
+            
+            # Perbaikan Indentasi dimulai dari sini
             with col_kiri:
+                st.subheader("Product List")
+                st.markdown("---")
+                for i, item in enumerate(cart):
+                    c1, c2, c3, c4 = st.columns([1.5, 3, 2, 1])
+                    with c1: 
+                        st.image(item['obj_produk'].img_url, width=80)
+                    with c2: 
+                        st.markdown(f"**{item['nama']}**")
+                        st.caption(f"Qty: {item['qty']}")
+                    with c3: 
+                        st.markdown(f"**Rp {item['harga'] * item['qty']:,}**")
+                    with c4:
+                        if st.button("✕", key=f"d_{i}"):
+                            cart.pop(i); st.rerun()
+                    st.markdown("---")
+
+            # Bagian Kanan
+            with col_kanan:
+                total_qty = sum(item['qty'] for item in cart)
+                subtotal = sum(item['harga'] * item['qty'] for item in cart)
+                
+                diskon_persen = 0
+                if total_qty >= 5: diskon_persen = 20
+                elif total_qty >= 3: diskon_persen = 10
+                
+                potongan = subtotal * (diskon_persen / 100)
+                total_akhir = subtotal - potongan
+
+                st.markdown("""
+                <div style="background-color: #F3F3F3; padding: 25px; border-radius: 15px; color: #333;">
+                    <h4 style="margin-top:0; color: #000;">Cart Totals</h4>
+                    <hr style="border-top: 1px solid #ccc;">
+                </div>""", unsafe_allow_html=True)
+                
+                st.write(f"Subtotal: Rp {subtotal:,}")
+                if diskon_persen > 0:
+                    st.success(f"Diskon {diskon_persen}%: -Rp {int(potongan):,}")
+                else:
+                    st.caption("Beli min 3 items dapat diskon!")
+                st.write(f"**Total: Rp {int(total_akhir):,}**")
+                
+                if st.button("Checkout Sekarang"):
+                    for item in cart:
+                        item['obj_produk'].kurangi_stok(item['qty'])
+                        st.session_state['riwayat_transaksi'].append({
+                            "pembeli": user,
+                            "barang": item['nama'],
+                            "qty": item['qty'],
+                            "total": int(item['harga'] * item['qty']),
+                            "status": "Diproses"
+                        })
+                    st.session_state['keranjang'] = []
+                    st.balloons()
+                    st.success("Pembayaran Berhasil!"); st.rerun()
+
+    # --- PESANAN SAYA ---
+    elif menu == "Pesanan Saya":
+        st.title("Riwayat Pesanan")
+        found = False
+        for t in st.session_state['riwayat_transaksi']:
+            if t['pembeli'] == user:
+                st.info(f"{t['barang']} (x{t['qty']}) | Total: Rp {t['total']} | Status: [{t['status']}]")
+                found = True
+        if not found: st.write("Belum ada pesanan.")
+
+    # --- PUSAT BANTUAN ---
+    elif menu == "Pusat Bantuan":
+        st.title("Pusat Bantuan")
+        tab1, tab2 = st.tabs(["Tulis Laporan", "Riwayat"])
+        with tab1:
+            pesan = st.text_area("Keluhan:")
+            if st.button("Kirim"):
+                st.session_state['inbox_laporan'].append({"pengirim": user, "pesan": pesan, "jawaban": "Belum dibalas"})
+                st.success("Terkirim")
+        with tab2:
+            for chat in st.session_state['inbox_laporan']:
+                if chat['pengirim'] == user:
+                    st.write(f"Q: {chat['pesan']}"); st.write(f"A: {chat['jawaban']}"); st.markdown("---")
+
+    elif menu == "Logout":
+        st.session_state['keranjang'] = []
+        st.session_state['user_role'] = None
+        st.session_state['user_login'] = ""
+        st.rerun()
+
+# ============================
+# 7. MAIN PROGRAM
+# ============================
+def main():
+    role = st.session_state['user_role']
+    if role is None:
+        halaman_depan_split()
+    elif role == "admin":
+        menu_admin()
+    elif role == "pembeli":
+        menu_pembeli(st.session_state['user_login'])
+
+if __name__ == "__main__":
+    main()
