@@ -527,14 +527,156 @@ def menu_pembeli(user):
                     st.success("Pembayaran Berhasil!"); st.rerun()
 
     # --- PESANAN SAYA ---
+    # --- PESANAN SAYA (TAMPILAN TIMELINE BARU) ---
     elif menu == "Pesanan Saya":
         st.title("Riwayat Pesanan")
+        
+        # CSS Khusus untuk Timeline (Hanya dimuat di menu ini)
+        st.markdown("""
+        <style>
+            .order-card {
+                background-color: white;
+                border-radius: 15px;
+                padding: 20px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+                margin-bottom: 20px;
+                border: 1px solid #e0e0e0;
+                color: #333;
+            }
+            .order-header {
+                display: flex;
+                justify-content: space-between;
+                border-bottom: 1px solid #f0f0f0;
+                padding-bottom: 10px;
+                margin-bottom: 15px;
+            }
+            .timeline-item {
+                position: relative;
+                padding-left: 30px;
+                margin-bottom: 15px;
+                border-left: 2px solid #e0e0e0;
+            }
+            .timeline-item:last-child {
+                border-left: 2px solid transparent;
+            }
+            .timeline-dot {
+                position: absolute;
+                left: -6px;
+                top: 0;
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background-color: #e0e0e0;
+            }
+            .timeline-content {
+                font-size: 0.9rem;
+                line-height: 1.2;
+            }
+            .timeline-title {
+                font-weight: bold;
+                color: #333;
+                margin-bottom: 4px;
+            }
+            .timeline-date {
+                font-size: 0.8rem;
+                color: #888;
+            }
+            
+            /* Warna Aktif (Hijau) */
+            .active-dot { background-color: #4CAF50; box-shadow: 0 0 0 3px #E8F5E9; }
+            .active-line { border-left-color: #4CAF50; }
+            .status-badge {
+                background-color: #E3F2FD;
+                color: #1976D2;
+                padding: 4px 12px;
+                border-radius: 20px;
+                font-size: 0.8rem;
+                font-weight: bold;
+            }
+            .success-badge {
+                 background-color: #E8F5E9; color: #2E7D32;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+
         found = False
+        # Loop semua transaksi
         for t in st.session_state['riwayat_transaksi']:
             if t['pembeli'] == user:
-                st.info(f"{t['barang']} (x{t['qty']}) | Total: Rp {t['total']} | Status: [{t['status']}]")
                 found = True
-        if not found: st.write("Belum ada pesanan.")
+                status_db = t['status']
+                
+                # LOGIKA VISUAL TIMELINE
+                # Kita tentukan level progress (1, 2, atau 3) berdasarkan status database
+                progress_level = 0
+                badge_class = "status-badge"
+                
+                if status_db == "Diproses":
+                    progress_level = 1
+                elif status_db == "Sedang Dikirim":
+                    progress_level = 2
+                elif status_db == "Selesai":
+                    progress_level = 3
+                    badge_class = "status-badge success-badge"
+
+                # Helper function kecil untuk menentukan warna dot & garis
+                def get_class(level_item, current_level):
+                    return "active-dot" if level_item <= current_level else ""
+                
+                def get_line(level_item, current_level):
+                    return "active-line" if level_item < current_level else ""
+
+                # Render HTML Card
+                st.markdown(f"""
+                <div class="order-card">
+                    <div class="order-header">
+                        <div>
+                            <div style="font-weight:bold; font-size:1.1rem; color:#000;">{t['barang']}</div>
+                            <div style="font-size:0.9rem; color:#666;">Qty: {t['qty']} | Total: Rp {t['total']:,}</div>
+                        </div>
+                        <div>
+                            <span class="{badge_class}">{status_db}</span>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 10px;">
+                        
+                        <div class="timeline-item {get_line(1, progress_level)}">
+                            <div class="timeline-dot {get_class(1, progress_level)}"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Order Confirmed</div>
+                                <div class="timeline-date">Pesanan telah diterima sistem</div>
+                            </div>
+                        </div>
+
+                        <div class="timeline-item {get_line(2, progress_level)}">
+                            <div class="timeline-dot {get_class(2, progress_level)}"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Shipping & Transit</div>
+                                <div class="timeline-date">Kurir sedang menuju lokasi</div>
+                            </div>
+                        </div>
+
+                        <div class="timeline-item">
+                            <div class="timeline-dot {get_class(3, progress_level)}"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Sent to Customer</div>
+                                <div class="timeline-date">Pesanan sampai di tujuan</div>
+                            </div>
+                        </div>
+                    
+                    </div>
+                    
+                    <div style="margin-top:15px; text-align:center;">
+                        <button style="background:none; border:1px solid #4CAF50; color:#4CAF50; border-radius:20px; padding:5px 20px; cursor:pointer;">
+                             Rate this delivery
+                        </button>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+        if not found:
+            st.info("Belum ada riwayat pesanan.")
 
     # --- PUSAT BANTUAN ---
     elif menu == "Pusat Bantuan":
@@ -570,4 +712,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
