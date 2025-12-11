@@ -203,8 +203,8 @@ def halaman_depan_split():
         st.write("") 
         st.write("") 
         
-        st.markdown('<div class="hero-title">Selamat Datang</div>', unsafe_allow_html=True)
-        st.markdown('<div class="hero-subtitle">Nyalakan Kembali Momen Berhargamu.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="hero-title">Hi! Precious People</div>', unsafe_allow_html=True)
+        st.markdown('<div class="hero-subtitle">Eco Aromatherapy Candle Since 2025.</div>', unsafe_allow_html=True)
         
         # Tabs untuk Login/Register
         tab_login, tab_daftar = st.tabs(["Login Akun", "Daftar Baru"])
