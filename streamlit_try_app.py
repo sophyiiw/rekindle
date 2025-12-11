@@ -310,7 +310,7 @@ def menu_pembeli(user):
                 
                 # Nama Produk & Harga (Warna Hitam & Rata Tengah)
                 st.markdown(f"""
-                <div style="text-align: center; margin-top: 5px;">
+                <div style="text-align: left; margin-top: 5px;">
                     <div style="font-weight: bold; font-size: 1.1rem; color: #000000;">{p.get_nama()}</div>
                     <div style="color: #333333; margin-bottom: 15px;">Rp {p.get_harga()}</div>
                 </div>
