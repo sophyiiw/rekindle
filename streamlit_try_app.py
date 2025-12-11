@@ -139,6 +139,18 @@ st.markdown("""
     .hero-subtitle { font-size: 1.1rem; color: #555555; margin-bottom: 2rem; }
     
     .block-container { padding-top: 2rem; max-width: 100%; }
+    /* ... (kode css sebelumnya) ... */
+
+    /* --- PERBAIKAN 4: UBAH BENTUK GAMBAR KATALOG JADI ARCH (KUBAH) --- */
+    /* Target khusus gambar di dalam kolom katalog */
+    div[data-testid="stImage"] img {
+        border-radius: 100px 100px 0 0 !important; /* Membuat lengkungan kubah di atas */
+        aspect-ratio: 3 / 4 !important;            /* Memaksa gambar jadi agak tinggi (portrait) */
+        object-fit: cover !important;              /* Memastikan gambar penuh & tidak gepeng */
+        width: 100% !important;
+        margin-bottom: 10px;
+    }
+</style>
 </style>
 """, unsafe_allow_html=True)
 
