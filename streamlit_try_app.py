@@ -307,8 +307,98 @@ def menu_pembeli(user):
                     st.session_state['keranjang'].append({"nama": p.get_nama(), "harga": p.get_harga()})
                     st.toast("Masuk Keranjang!")
     elif menu == "Keranjang":
-        st.title("Keranjang")
-        st.write(st.session_state['keranjang'])
+        st.title("Your Cart")
+        
+        # Ambil data keranjang
+        cart_items = st.session_state['keranjang']
+        
+        # Cek jika keranjang kosong
+        if not cart_items:
+            st.info("Keranjang Anda masih kosong.")
+            st.markdown("<br><br><br>", unsafe_allow_html=True) 
+        else:
+            # Layout 2 Kolom: Kiri (Produk) & Kanan (Total)
+            col_kiri, col_kanan = st.columns([2, 1], gap="large")
+            
+            # --- KOLOM KIRI: DAFTAR ITEM ---
+            with col_kiri:
+                st.subheader("Product List")
+                st.markdown("---")
+                
+                # Helper: Cari URL gambar berdasarkan nama produk di katalog
+                def get_img_by_name(nama_dicari):
+                    # Mencari di database produk_list yang sudah ada
+                    for p in st.session_state['produk_list']:
+                        if p.get_nama() == nama_dicari:
+                            return p.img_url
+                    return "https://via.placeholder.com/150" # Fallback image
+
+                # Loop item di keranjang
+                for i, item in enumerate(cart_items):
+                    # Grid kecil untuk setiap baris item
+                    c1, c2, c3, c4 = st.columns([1.5, 3, 2, 1])
+                    
+                    with c1:
+                        # Tampilkan gambar thumbnail
+                        img_src = get_img_by_name(item['nama'])
+                        st.markdown(f"""
+                        <div style="border-radius: 10px; overflow: hidden; height: 80px; width: 80px;">
+                            <img src="{img_src}" style="width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                    with c2:
+                        st.markdown(f"**{item['nama']}**")
+                        st.caption("Scented Candle")
+                    
+                    with c3:
+                        st.markdown(f"**Rp {item['harga']:,}**")
+                        
+                    with c4:
+                        # Tombol Hapus (X)
+                        if st.button("✕", key=f"del_{i}"):
+                            cart_items.pop(i) # Hapus dari list
+                            st.rerun()        # Refresh halaman
+                    
+                    st.markdown("---") 
+
+            # --- KOLOM KANAN: CART TOTALS ---
+            with col_kanan:
+                st.markdown("""
+                <div style="background-color: #F3F3F3; padding: 25px; border-radius: 15px;">
+                    <h4 style="margin-top:0; color: #333;">Cart Totals</h4>
+                    <hr style="border-top: 1px solid #ccc;">
+                """, unsafe_allow_html=True)
+                
+                # Hitung Total
+                total_belanja = sum(item['harga'] for item in cart_items)
+                
+                # Rincian Biaya
+                c_sub1, c_sub2 = st.columns(2)
+                with c_sub1: st.write("Subtotal")
+                with c_sub2: st.write(f"Rp {total_belanja:,}")
+                
+                c_ship1, c_ship2 = st.columns(2)
+                with c_ship1: st.write("Shipping")
+                with c_ship2: st.write("Free")
+                
+                st.markdown("<hr style='border-top: 1px solid #ccc; margin: 10px 0;'>", unsafe_allow_html=True)
+                
+                # Total Akhir
+                c_tot1, c_tot2 = st.columns(2)
+                with c_tot1: st.markdown("##### Total")
+                with c_tot2: st.markdown(f"##### Rp {total_belanja:,}")
+                
+                st.write("")
+                
+                # Tombol Checkout
+                if st.button("PROCEED TO CHECKOUT", use_container_width=True):
+                    st.balloons()
+                    st.success("Terima kasih! Pesanan Anda sedang diproses.")
+                    st.session_state['keranjang'] = [] # Kosongkan keranjang
+                    # st.rerun() # Uncomment jika ingin auto-refresh
+                
+                st.markdown("</div>", unsafe_allow_html=True)
     elif menu == "Logout":
         st.session_state['user_role'] = None; st.rerun()
 
