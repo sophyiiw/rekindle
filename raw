@@ -1,0 +1,343 @@
+import streamlit as st
+import csv
+import os
+
+# ============================
+# 1. KONFIGURASI HALAMAN
+# ============================
+st.set_page_config(
+    page_title="Rekindle Candle Shop",
+    page_icon="🕯️",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# ============================
+# 2. CSS STYLING (PERBAIKAN WARNA TEKS)
+# ============================
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'Poppins', sans-serif;
+        color: #333333;
+    }
+
+    /* BACKGROUND UTAMA CREAM */
+    .stApp {
+        background-color: #FAF9F6;
+    }
+
+    /* =========================================
+       PERBAIKAN KOLOM INPUT (FORM LOGIN)
+       Agar presisi, tidak ada blok hitam, dan rapi
+       ========================================= */
+    
+    /* 1. Reset Container Input */
+    [data-testid="stTextInput"] {
+        margin-bottom: 10px;
+    }
+    
+    /* 2. Kotak Input (Wrapper) - Memaksa background Putih & Border Rapi */
+    [data-testid="stTextInput"] > div > div {
+        background-color: #FFFFFF !important;
+        color: #333333 !important;
+        border: 1px solid #E0E0E0 !important; /* Border abu lembut */
+        border-radius: 12px !important;
+        box-shadow: none !important;
+    }
+
+    /* 3. Efek saat diklik (Focus) - Ubah merah jadi Hitam Elegan */
+    [data-testid="stTextInput"] > div > div:focus-within {
+        border-color: #333333 !important;
+        box-shadow: 0 0 0 1px #333333 !important; /* Efek highlight tipis */
+    }
+
+    /* 4. Warna Teks yang diketik user */
+    [data-testid="stTextInput"] input {
+        color: #333333 !important;
+        -webkit-text-fill-color: #333333 !important; /* Fix untuk Chrome */
+        caret-color: #333333; /* Warna kursor ketik */
+    }
+
+    /* 5. Warna Placeholder ("Masukkan username...") */
+    [data-testid="stTextInput"] input::placeholder {
+        color: #999999 !important;
+        opacity: 1;
+    }
+
+    /* 6. Sembunyikan Label default Streamlit agar tidak dobel */
+    [data-testid="stTextInput"] label {
+        display: none;
+    }
+
+    /* =========================================
+       PERBAIKAN TABS (LOGIN / DAFTAR)
+       ========================================= */
+    /* Tab Tidak Aktif */
+    button[data-baseweb="tab"] > div {
+        color: #999999 !important;
+        font-weight: 400;
+    }
+    /* Tab Aktif (Saat dipilih) */
+    button[data-baseweb="tab"][aria-selected="true"] > div {
+        color: #000000 !important;
+        font-weight: 700;
+    }
+    /* Garis bawah tab aktif */
+    button[data-baseweb="tab"][aria-selected="true"] {
+        border-bottom-color: #000000 !important;
+    }
+
+    /* =========================================
+       PERBAIKAN TEXT KANAN (GLASS CARD)
+       Agar terbaca jelas di background terang
+       ========================================= */
+    .glass-text-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+        color: #1A1A1A !important; /* HITAM PEKAT */
+        line-height: 1.2;
+    }
+    .glass-text-body {
+        font-size: 1rem;
+        line-height: 1.6;
+        color: #444444 !important; /* ABU TUA */
+        font-weight: 400;
+    }
+    
+    /* Tombol Utama */
+    .stButton > button {
+        background-color: #222222 !important;
+        color: white !important;
+        border-radius: 30px;
+        border: none;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+    }
+    .stButton > button:hover {
+        background-color: #000000 !important;
+        transform: translateY(-2px);
+    }
+
+    /* Header Kiri */
+    .hero-title {
+        font-size: 3rem;
+        font-weight: 700;
+        color: #1A1A1A;
+    }
+    .hero-subtitle {
+        color: #666666;
+        font-weight: 300;
+    }
+    
+    /* Container Gambar Kanan */
+    .right-image-container {
+        position: relative;
+        width: 100%;
+        height: 90vh;
+        border-radius: 20px;
+        overflow: hidden;
+        background-image: url('https://images.unsplash.com/photo-1602523961358-f9f03dd557db?q=80&w=1000&auto=format&fit=crop'); 
+        background-size: cover;
+        background-position: center;
+    }
+
+    /* Glass Card styling */
+    .glass-card {
+        position: absolute;
+        top: 50%;
+        right: -40px;
+        transform: translateY(-50%);
+        width: 85%;
+        background: rgba(255, 255, 255, 0.55);
+        backdrop-filter: blur(25px);
+        -webkit-backdrop-filter: blur(25px);
+        padding: 40px;
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+    }
+    
+    /* Padding Container */
+    .block-container {
+        padding-top: 2rem;
+        max-width: 100%;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Placeholder Gambar Produk
+IMG_LAVENDER = "https://i.pinimg.com/736x/1f/7a/b3/1f7ab3ca70a7368b15d124be258c3baa.jpg"
+IMG_VANILLA = "https://images.unsplash.com/photo-1603006905003-be475563bc59?w=400&q=80"
+IMG_SANDALWOOD = "https://images.unsplash.com/photo-1596433809252-260c2745dfdd?w=400&q=80"
+
+# ============================
+# 3. CLASS & DATABASE
+# ============================
+class User:
+    def __init__(self, username, password, role):
+        self.username = username
+        self.password = password
+        self.role = role
+
+class ProdukLilin:
+    def __init__(self, nama, harga, stok, img_url):
+        self._nama = nama
+        self._harga = harga
+        self._stok = stok
+        self.img_url = img_url 
+    def get_nama(self): return self._nama
+    def get_harga(self): return self._harga
+    def get_stok(self): return self._stok
+    def set_nama(self, nama_baru): self._nama = nama_baru
+    def set_harga(self, harga_baru): self._harga = harga_baru
+    def set_stok(self, stok_baru): self._stok = stok_baru
+    def kurangi_stok(self, jumlah): self._stok = self._stok - jumlah
+    def info(self): st.write(f"**{self._nama}** - Stok: {self._stok}")
+
+def init_state():
+    if 'users_db' not in st.session_state:
+        st.session_state['users_db'] = {
+            "admin": User("admin", "123", "admin"),
+            "naya":  User("naya", "abc", "pembeli"),
+            "shifa": User("shifa", "abc", "pembeli")
+        }
+    if 'produk_list' not in st.session_state:
+        st.session_state['produk_list'] = [
+            ProdukLilin("Lilin Lavender", 50000, 10, IMG_LAVENDER),
+            ProdukLilin("Lilin Vanila", 45000, 3, IMG_VANILLA), 
+            ProdukLilin("Lilin Sandalwood", 60000, 5, IMG_SANDALWOOD)
+        ]
+    if 'riwayat_transaksi' not in st.session_state: st.session_state['riwayat_transaksi'] = []
+    if 'keranjang' not in st.session_state: st.session_state['keranjang'] = []
+    if 'inbox_laporan' not in st.session_state: st.session_state['inbox_laporan'] = []
+    if 'user_role' not in st.session_state: st.session_state['user_role'] = None 
+    if 'user_login' not in st.session_state: st.session_state['user_login'] = ""
+
+init_state()
+
+# ============================
+# 4. HALAMAN DEPAN (VISUAL DIPERBAIKI)
+# ============================
+def halaman_depan_split():
+    col_kiri, col_kanan = st.columns([1, 1.2], gap="large")
+
+    # --- KOLOM KIRI ---
+    with col_kiri:
+        st.write("") 
+        st.write("") 
+        st.write("") 
+        
+        st.markdown('<div class="hero-title">Hi! Precious People</div>', unsafe_allow_html=True)
+        st.markdown('<div class="hero-subtitle">Eco Aromatherapy Candle Since 2025.</div>', unsafe_allow_html=True)
+        
+        # Tabs untuk Login/Register
+        tab_login, tab_daftar = st.tabs(["Login Akun", "Daftar Baru"])
+        
+        with tab_login:
+            st.write("")
+            with st.form("login_form"):
+                username = st.text_input("Username", placeholder="Masukkan username...", label_visibility="collapsed")
+                st.write("")
+                password = st.text_input("Password", type="password", placeholder="Masukkan password...", label_visibility="collapsed")
+                st.write("")
+                submitted = st.form_submit_button("Masuk")
+                
+                if submitted:
+                    user = st.session_state['users_db'].get(username)
+                    if user is None:
+                        st.error("Username tidak ditemukan.")
+                    elif user.password != password:
+                        st.error("Password salah.")
+                    else:
+                        st.session_state['user_role'] = user.role
+                        st.session_state['user_login'] = user.username
+                        st.success(f"Berhasil masuk, {user.username}!")
+                        st.rerun()
+
+        with tab_daftar:
+            st.write("")
+            with st.form("reg_form"):
+                username_baru = st.text_input("Username baru", placeholder="Buat username unik...", label_visibility="collapsed")
+                st.write("")
+                password_baru = st.text_input("Password baru", type="password", placeholder="Buat password...", label_visibility="collapsed")
+                st.write("")
+                submitted = st.form_submit_button("Daftar Sekarang")
+                
+                if submitted:
+                    if username_baru in st.session_state['users_db']:
+                        st.error("Username sudah terpakai.")
+                    elif username_baru == "":
+                        st.error("Username tidak boleh kosong.")
+                    else:
+                        st.session_state['users_db'][username_baru] = User(username_baru, password_baru, "pembeli")
+                        st.success("Akun berhasil dibuat! Silakan Login.")
+        
+        st.write("")
+        st.caption("Butuh bantuan? Hubungi support@rekindle.com")
+
+    # --- KOLOM KANAN (GLASS CARD) ---
+    with col_kanan:
+        st.markdown("""
+        <div class="right-image-container">
+            <div class="glass-card">
+                <div class="glass-text-title">
+                    Light Up, Breathe Easy From Waste to Wellness
+                </div>
+                <div class="glass-text-body">
+                    Koleksi lilin aromaterapi kami dirancang untuk menciptakan 
+                    ketenangan dan estetika terbaik. Temukan wangi favoritmu sekarang.
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+# ============================
+# 5. HALAMAN UTAMA (SESUDAH LOGIN)
+# ============================
+def menu_admin():
+    st.sidebar.title("Admin Menu")
+    menu = st.sidebar.selectbox("Pilih:", ["Stok Gudang", "Logout"])
+    if menu == "Stok Gudang":
+        st.title("Stok Gudang")
+        for p in st.session_state['produk_list']: p.info()
+    elif menu == "Logout":
+        st.session_state['user_role'] = None; st.rerun()
+
+def menu_pembeli(user):
+    st.sidebar.title(f"Halo, {user}")
+    menu = st.sidebar.selectbox("Menu:", ["Katalog", "Keranjang", "Logout"])
+    if menu == "Katalog":
+        st.title("Katalog Produk")
+        cols = st.columns(3)
+        for i, p in enumerate(st.session_state['produk_list']):
+            with cols[i%3]:
+                st.image(p.img_url)
+                st.write(f"**{p.get_nama()}**")
+                st.write(f"Rp {p.get_harga()}")
+                if st.button("Beli", key=f"b_{i}"):
+                    st.session_state['keranjang'].append({"nama": p.get_nama(), "harga": p.get_harga()})
+                    st.toast("Masuk Keranjang!")
+    elif menu == "Keranjang":
+        st.title("Keranjang")
+        st.write(st.session_state['keranjang'])
+    elif menu == "Logout":
+        st.session_state['user_role'] = None; st.rerun()
+
+# ============================
+# 6. MAIN PROGRAM
+# ============================
+def main():
+    role = st.session_state['user_role']
+    if role is None:
+        halaman_depan_split()
+    elif role == "admin":
+        menu_admin()
+    elif role == "pembeli":
+        menu_pembeli(st.session_state['user_login'])
+
+if __name__ == "__main__":
+    main()
