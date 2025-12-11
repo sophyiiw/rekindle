@@ -418,6 +418,9 @@ def menu_admin():
 # ============================
 # 6. HALAMAN PEMBELI
 # ============================
+# ============================
+# 6. HALAMAN PEMBELI (DIPERBAIKI)
+# ============================
 def menu_pembeli(user):
     st.sidebar.title(f"Halo, {user}")
     menu = st.sidebar.selectbox("Menu:", ["Katalog", "Keranjang", "Pesanan Saya", "Pusat Bantuan", "Logout"])
@@ -449,28 +452,32 @@ def menu_pembeli(user):
                             })
                             st.toast("Masuk Keranjang!")
 
-    # --- KERANJANG (BAGIAN YANG DIPERBAIKI INDENTASINYA) ---
+    # --- KERANJANG (BAGIAN YANG DIPERBAIKI WARNA TEKSNYA) ---
     elif menu == "Keranjang":
-        st.title("Your Cart")
+        # GANTI st.title DENGAN INI (Warna Hitam)
+        st.markdown("<h1 style='color: #000000;'>Your Cart</h1>", unsafe_allow_html=True)
+        
         cart = st.session_state['keranjang']
         if not cart:
             st.info("Keranjang Kosong.")
         else:
             col_kiri, col_kanan = st.columns([2, 1], gap="large")
             
-            # Perbaikan Indentasi dimulai dari sini
             with col_kiri:
-                st.subheader("Product List")
+                # GANTI st.subheader DENGAN INI (Warna Hitam)
+                st.markdown("<h3 style='color: #000000;'>Product List</h3>", unsafe_allow_html=True)
                 st.markdown("---")
                 for i, item in enumerate(cart):
                     c1, c2, c3, c4 = st.columns([1.5, 3, 2, 1])
                     with c1: 
                         st.image(item['obj_produk'].img_url, width=80)
                     with c2: 
-                        st.markdown(f"**{item['nama']}**")
-                        st.caption(f"Qty: {item['qty']}")
+                        # PERBAIKAN: Nama Produk & Qty jadi hitam/gelap
+                        st.markdown(f"<div style='color: #000000; font-weight: bold;'>{item['nama']}</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='color: #555555; font-size: 0.9em;'>Qty: {item['qty']}</div>", unsafe_allow_html=True)
                     with c3: 
-                        st.markdown(f"**Rp {item['harga'] * item['qty']:,}**")
+                        # PERBAIKAN: Harga jadi hitam
+                        st.markdown(f"<div style='color: #000000; font-weight: bold;'>Rp {item['harga'] * item['qty']:,}</div>", unsafe_allow_html=True)
                     with c4:
                         if st.button("✕", key=f"d_{i}"):
                             cart.pop(i); st.rerun()
@@ -494,12 +501,16 @@ def menu_pembeli(user):
                     <hr style="border-top: 1px solid #ccc;">
                 </div>""", unsafe_allow_html=True)
                 
-                st.write(f"Subtotal: Rp {subtotal:,}")
+                # PERBAIKAN: Tulisan Subtotal jadi hitam
+                st.markdown(f"<div style='color: #000000;'>Subtotal: Rp {subtotal:,}</div>", unsafe_allow_html=True)
+                
                 if diskon_persen > 0:
                     st.success(f"Diskon {diskon_persen}%: -Rp {int(potongan):,}")
                 else:
                     st.caption("Beli min 3 items dapat diskon!")
-                st.write(f"**Total: Rp {int(total_akhir):,}**")
+                
+                # PERBAIKAN: Tulisan Total Akhir jadi hitam tebal
+                st.markdown(f"<div style='color: #000000; font-weight: bold; margin-top: 10px; font-size: 1.1em;'>Total: Rp {int(total_akhir):,}</div>", unsafe_allow_html=True)
                 
                 if st.button("Checkout Sekarang"):
                     for item in cart:
@@ -559,3 +570,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
