@@ -316,57 +316,71 @@ def menu_pembeli(user): # <-- Pastikan parameter 'user' ada di sini
                             st.toast("Masuk Keranjang!")
 
     # --- KERANJANG ---
+ # --- KERANJANG ---
     elif menu == "Keranjang":
         st.markdown("<h1 style='color: #000000;'>Your Cart</h1>", unsafe_allow_html=True)
         cart = st.session_state['keranjang']
+        
+        # JIKA KERANJANG KOSONG
         if not cart:
             st.info("Keranjang Kosong.")
+            
+            # --- LOGIKA TAMBAHAN: PESAN SUKSES SETELAH CHECKOUT ---
+            # Cek apakah baru saja checkout berhasil?
+            if 'checkout_berhasil' in st.session_state and st.session_state['checkout_berhasil']:
+                st.balloons()
+                st.success("Pembayaran Berhasil! Terima kasih.")
+                # Reset status agar pesan hilang jika pindah menu nanti
+                st.session_state['checkout_berhasil'] = False 
+        
+        # JIKA ADA ISI KERANJANG
         else:
             col_kiri, col_kanan = st.columns([2, 1], gap="large")
+            
             with col_kiri:
                 st.markdown("<h3 style='color: #000000;'>Product List</h3>", unsafe_allow_html=True)
-                st.markdown("---")
                 for i, item in enumerate(cart):
                     c1, c2, c3, c4 = st.columns([1.5, 3, 2, 1])
                     with c1: st.image(item['obj_produk'].img_url, width=80)
                     with c2: 
-                        st.markdown(f"<div style='color: #000000; font-weight: bold;'>{item['nama']}</div>", unsafe_allow_html=True)
-                        st.markdown(f"<div style='color: #555555; font-size: 0.9em;'>Qty: {item['qty']}</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='color: #000;'><b>{item['nama']}</b></div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='color: #555;'>Qty: {item['qty']}</div>", unsafe_allow_html=True)
                     with c3: 
-                        st.markdown(f"<div style='color: #000000; font-weight: bold;'>Rp {item['harga'] * item['qty']:,}</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='color: #000;'><b>Rp {item['harga']*item['qty']:,}</b></div>", unsafe_allow_html=True)
                     with c4:
-                        if st.button("✕", key=f"d_{i}"): cart.pop(i); st.rerun()
+                        if st.button("X", key=f"d_{i}"): cart.pop(i); st.rerun()
                     st.markdown("---")
 
             with col_kanan:
-                total_qty = sum(item['qty'] for item in cart)
                 subtotal = sum(item['harga'] * item['qty'] for item in cart)
-                diskon_persen = 0
-                if total_qty >= 5: diskon_persen = 20
-                elif total_qty >= 3: diskon_persen = 10
-                potongan = subtotal * (diskon_persen / 100)
-                total_akhir = subtotal - potongan
-
-                st.markdown("""<div style="background-color: #F3F3F3; padding: 25px; border-radius: 15px; color: #333;"><h4 style="margin-top:0; color: #000;">Cart Totals</h4><hr style="border-top: 1px solid #ccc;"></div>""", unsafe_allow_html=True)
-                st.markdown(f"<div style='color: #000000;'>Subtotal: Rp {subtotal:,}</div>", unsafe_allow_html=True)
-                if diskon_persen > 0: st.success(f"Diskon {diskon_persen}%: -Rp {int(potongan):,}")
-                else: st.caption("Beli min 3 items dapat diskon!")
-                st.markdown(f"<div style='color: #000000; font-weight: bold; margin-top: 10px; font-size: 1.1em;'>Total: Rp {int(total_akhir):,}</div>", unsafe_allow_html=True)
+                total_qty = sum(item['qty'] for item in cart)
+                diskon = 0.1 if total_qty >= 3 else 0
+                potongan = subtotal * diskon
+                
+                st.markdown("""<div style="background:#F3F3F3; padding:20px; border-radius:10px;"><h4 style="color:#000; margin-top:0;">Cart Totals</h4><hr></div>""", unsafe_allow_html=True)
+                st.markdown(f"<div style='color:#000;'>Subtotal: Rp {subtotal:,}</div>", unsafe_allow_html=True)
+                if diskon > 0: st.success(f"Diskon 10%: -Rp {int(potongan):,}")
+                st.markdown(f"<div style='color:#000; font-weight:bold; font-size:1.2em; margin-top:10px;'>Total: Rp {int(subtotal-potongan):,}</div>", unsafe_allow_html=True)
                 
                 if st.button("Checkout Sekarang"):
                     for item in cart:
                         item['obj_produk'].kurangi_stok(item['qty'])
                         st.session_state['riwayat_transaksi'].append({
-                            "pembeli": user,
+                            "pembeli": user, 
                             "barang": item['nama'],
-                            "qty": item['qty'],
-                            "total": int(item['harga'] * item['qty']),
+                            "qty": item['qty'], 
+                            "total": int(item['harga']*item['qty']),
                             "status": "Diproses"
                         })
+                    
+                    # KOSONGKAN KERANJANG
                     st.session_state['keranjang'] = []
-                    st.balloons()
-                    st.success("Pembayaran Berhasil!"); st.rerun()
-
+                    
+                    # SET STATUS BERHASIL UNTUK DITAMPILKAN SETELAH RERUN
+                    st.session_state['checkout_berhasil'] = True
+                    
+                    # REFRESH HALAMAN (Agar tampilan keranjang jadi kosong + pesan muncul)
+                    st.rerun()
     # --- PESANAN SAYA ---
     elif menu == "Pesanan Saya":
         st.markdown("<h1 style='color: #000000;'>Riwayat Pesanan</h1>", unsafe_allow_html=True)
@@ -441,4 +455,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
