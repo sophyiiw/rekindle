@@ -1,23 +1,11 @@
-Ini adalah versi kodingan yang telah diperbarui agar tampilannya lebih "aesthetic" dan mirip dengan web *e-commerce* sungguhan.
-
-**Perubahan Kunci untuk Estetika:**
-
-1.  **Gambar Produk:** Saya menambahkan atribut `img_url` pada *class* `ProdukLilin`. Di menu pembeli, produk kini ditampilkan dalam bentuk "Kartu" (Card) dengan gambar, bukan hanya teks.
-      * *Catatan: Saya menggunakan URL gambar placeholder dari Unsplash agar langsung terlihat hasilnya. Di aplikasi nyata, Anda bisa menggantinya dengan path file gambar lokal Anda.*
-2.  **Banner & Branding:** Menambahkan gambar banner di halaman utama (Login/Register) untuk memberikan kesan pertama yang lebih baik.
-3.  **Tata Letak (Layout):** Menggunakan `st.columns` dan `st.container` dengan border secara lebih efektif, terutama di katalog produk, agar terlihat rapi.
-4.  **Ikon/Emoji:** Menambahkan emoji pada menu sidebar dan tombol untuk memberikan petunjuk visual yang lebih menarik.
-5.  **Metrics (Admin):** Di dashboard admin, data ringkasan ditampilkan menggunakan `st.metric` agar terlihat profesional.
-6.  **Pemisah Visual:** Menggunakan `st.divider()` dan `st.markdown("---")` untuk memisahkan bagian-bagian konten dengan jelas.
-
-Silakan salin dan jalankan kode lengkap berikut:
-
-```python
 import streamlit as st
 import csv
 import os
 
-# Konfigurasi Halaman (Harus di paling atas)
+# ============================
+# KONFIGURASI HALAMAN
+# (Wajib ditaruh paling atas)
+# ============================
 st.set_page_config(
     page_title="Rekindle Candle Shop",
     page_icon="🕯️",
@@ -26,8 +14,7 @@ st.set_page_config(
 )
 
 # ============================
-# STYLE TAMBAHAN (CSS HACK)
-# Untuk membuat tampilan kartu produk lebih cantik
+# STYLE TAMBAHAN (CSS)
 # ============================
 st.markdown("""
 <style>
@@ -59,7 +46,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# URL Gambar Placeholder (Ganti dengan file lokal Anda nanti jika perlu)
+# URL Gambar Placeholder
 IMG_BANNER = "https://images.unsplash.com/photo-1608555855762-2b657eb1c348?w=1200&q=80"
 IMG_LAVENDER = "https://images.unsplash.com/photo-1602523961358-f9f03dd557db?w=400&q=80"
 IMG_VANILLA = "https://images.unsplash.com/photo-1603006905003-be475563bc59?w=400&q=80"
@@ -76,15 +63,14 @@ class User:
         self.role = role
 
 # ============================
-# CLASS PRODUK LILIN (Diupdate dengan Gambar)
+# CLASS PRODUK LILIN
 # ============================
 class ProdukLilin:
-    # Menambahkan parameter img_url
     def __init__(self, nama, harga, stok, img_url):
         self._nama = nama
         self._harga = harga
         self._stok = stok
-        self.img_url = img_url # Menyimpan URL gambar
+        self.img_url = img_url 
 
     # --- GETTER ---
     def get_nama(self):
@@ -111,7 +97,7 @@ class ProdukLilin:
         self._stok = self._stok - jumlah
 
     def info(self):
-        # Tampilan info di admin (sederhana)
+        # Tampilan info di admin
         pesan_stok = str(self._stok)
         if self._stok < 5:
             pesan_stok = f"⚠️ {self._stok} (MENIPIS!)"
@@ -137,7 +123,7 @@ def init_state():
             "shifa": User("shifa", "abc", "pembeli")
         }
 
-    # Database Produk (Diupdate dengan gambar)
+    # Database Produk
     if 'produk_list' not in st.session_state:
         st.session_state['produk_list'] = [
             ProdukLilin("Lilin Lavender", 50000, 10, IMG_LAVENDER),
@@ -171,26 +157,125 @@ def cari_produk(nama_dicari):
 # ============================
 # FUNGSI EXPORT & IMPORT
 # ============================
-# (Kode Export/Import sama seperti sebelumnya, tidak diubah fungsinya)
 def fitur_export_data():
     st.subheader("📂 Export Data (CSV)")
     jenis = st.selectbox("Pilih data:", 
                          ["Data User", "Data Produk", "Riwayat Penjualan", "Laporan Masalah"])
     
     if st.button("Export Sekarang"):
-        # ... (Logika export sama, disingkat agar tidak terlalu panjang di sini) ...
-        st.info("Fitur export berfungsi seperti kode sebelumnya.")
+        if jenis == "Data User":
+            filename = "data_users.csv"
+            header = ['Username', 'Password', 'Role']
+            data_rows = []
+            db = st.session_state['users_db']
+            for username in db:
+                u = db[username] 
+                data_rows.append([u.username, u.password, u.role])
+            
+            with open(filename, "w", newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(header)
+                writer.writerows(data_rows)
+            st.success(f">> Sukses export {filename}!")
+
+        elif jenis == "Data Produk":
+            filename = "data_produk.csv"
+            header = ['Nama Produk', 'Harga', 'Stok']
+            data_rows = []
+            for produk in st.session_state['produk_list']:
+                data_rows.append([produk.get_nama(), produk.get_harga(), produk.get_stok()])
+        
+            with open(filename, "w", newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(header)
+                writer.writerows(data_rows)
+            st.success(f">> Sukses export {filename}!")
+            
+        elif jenis == "Riwayat Penjualan":
+            tx = st.session_state['riwayat_transaksi']
+            if len(tx) == 0:
+                st.warning("Data penjualan masih kosong.")
+            else:
+                filename = "data_penjualan.csv"
+                header = ['pembeli', 'barang', 'qty', 'total', 'status']
+                with open(filename, "w", newline='') as csvfile:
+                    writer = csv.DictWriter(csvfile, fieldnames=header)
+                    writer.writeheader()
+                    writer.writerows(tx)
+                st.success(f">> Sukses export {filename}!")
+
+        elif jenis == "Laporan Masalah":
+            lapor = st.session_state['inbox_laporan']
+            if len(lapor) == 0:
+                st.warning("Data laporan masih kosong.")
+            else:
+                filename = "data_laporan.csv"
+                header = ['pengirim', 'pesan', 'jawaban']
+                with open(filename, "w", newline='') as csvfile:
+                    writer = csv.DictWriter(csvfile, fieldnames=header)
+                    writer.writeheader()
+                    writer.writerows(lapor)
+                st.success(f">> Sukses export {filename}!")
 
 def fitur_import_data():
     st.subheader("📂 Import Data")
     st.warning("Peringatan: Data lama akan ditimpa.")
+    
     if st.button("Yakin Load Data?"):
-         # ... (Logika import sama, disingkat) ...
-         st.info("Fitur import berfungsi seperti kode sebelumnya.")
+        # 1. IMPORT USER
+        if os.path.exists("data_users.csv"):
+            with open("data_users.csv", "r") as csvfile:
+                csvreader = csv.reader(csvfile)
+                next(csvreader) # Skip Header
+                rows = [r for r in csvreader]
+            st.session_state['users_db'].clear()
+            for row in rows:
+                st.session_state['users_db'][row[0]] = User(row[0], row[1], row[2])
+            st.success(">> Sukses load User.")
+        else:
+            st.error(">> File data_users.csv tidak ada.")
+
+        # 2. IMPORT PRODUK
+        if os.path.exists("data_produk.csv"):
+            with open("data_produk.csv", "r") as csvfile:
+                csvreader = csv.reader(csvfile)
+                next(csvreader)
+                rows = [r for r in csvreader]
+            st.session_state['produk_list'].clear()
+            # Gunakan gambar placeholder default karena CSV lama tidak simpan URL
+            for row in rows:
+                st.session_state['produk_list'].append(ProdukLilin(row[0], int(row[1]), int(row[2]), IMG_LAVENDER))
+            st.success(">> Sukses load Produk.")
+        else:
+            st.error(">> File data_produk.csv tidak ada.")
+
+        # 3. IMPORT PENJUALAN
+        if os.path.exists("data_penjualan.csv"):
+            with open("data_penjualan.csv", "r") as csvfile:
+                csvreader = csv.DictReader(csvfile)
+                rows = []
+                for row in csvreader:
+                    row['qty'] = int(row['qty'])
+                    row['total'] = int(row['total'])
+                    rows.append(row)
+            st.session_state['riwayat_transaksi'] = rows
+            st.success(">> Sukses load Penjualan.")
+        else:
+            st.error(">> File data_penjualan.csv tidak ada.")
+
+        # 4. IMPORT LAPORAN
+        if os.path.exists("data_laporan.csv"):
+            with open("data_laporan.csv", "r") as csvfile:
+                csvreader = csv.DictReader(csvfile)
+                rows = [r for r in csvreader]
+            st.session_state['inbox_laporan'] = rows
+            st.success(">> Sukses load Laporan.")
+        else:
+            st.error(">> File data_laporan.csv tidak ada.")
 
 
 # ============================
-# HALAMAN LOGIN & REGISTER (DIPERCANTIK)
+# HALAMAN LOGIN & REGISTER
 # ============================
 def header_halaman_depan():
     st.image(IMG_BANNER, use_column_width=True)
@@ -238,16 +323,14 @@ def halaman_register():
                 elif username_baru == "":
                     st.error("Username tidak boleh kosong")
                 else:
-                    # User baru default role pembeli
                     st.session_state['users_db'][username_baru] = User(username_baru, password_baru, "pembeli")
                     st.success("Sukses: Akun berhasil dibuat! Silakan Login di menu sebelah.")
 
 # ============================
-# HALAMAN ADMIN (DIPERCANTIK)
+# HALAMAN ADMIN
 # ============================
 def menu_admin():
     st.sidebar.title("🛠️ ADMIN DASHBOARD")
-    # Menu dengan Emoji
     pilihan_menu = {
         "📦 Cek Stok Gudang": "gudang",
         "➕ Tambah Produk": "tambah",
@@ -260,7 +343,7 @@ def menu_admin():
         "🚪 Logout": "logout"
     }
     menu = st.sidebar.radio("Navigasi:", list(pilihan_menu.keys()))
-    st.title(menu) # Judul halaman sesuai menu
+    st.title(menu) 
 
     if menu == "📦 Cek Stok Gudang":
         st.info("Daftar stok lilin saat ini di gudang.")
@@ -273,9 +356,8 @@ def menu_admin():
                 nama = st.text_input("Nama Produk")
                 harga = st.number_input("Harga (Rp)", min_value=0, step=1000)
                 stok = st.number_input("Stok Awal", min_value=0, step=1)
-                # Admin bisa input URL gambar produk baru
                 img = st.text_input("URL Gambar Produk (Opsional)", placeholder="https://...")
-                if img == "": img = IMG_LAVENDER # Gambar default jika kosong
+                if img == "": img = IMG_LAVENDER
 
                 submit = st.form_submit_button("Simpan Produk")
                 if submit:
@@ -335,7 +417,6 @@ def menu_admin():
         total_pendapatan = sum(tx['total'] for tx in tx_list)
         total_transaksi = len(tx_list)
 
-        # Tampilkan Metrics
         m1, m2 = st.columns(2)
         m1.metric("Total Transaksi", f"{total_transaksi} Pesanan")
         m2.metric("Total Pendapatan", f"Rp {total_pendapatan:,}")
@@ -350,7 +431,6 @@ def menu_admin():
                         st.markdown(f"**{tx['pembeli']}** membeli **{tx['barang']}**")
                         c1, c2 = st.columns(2)
                         c1.write(f"Total: Rp {tx['total']:,}")
-                        # Warna status berbeda
                         color = "orange" if tx['status'] == "Diproses" else "blue" if tx['status'] == "Sedang Dikirim" else "green"
                         c2.markdown(f"Status: <span style='color:{color};font-weight:bold'>{tx['status']}</span>", unsafe_allow_html=True)
 
@@ -380,7 +460,6 @@ def menu_admin():
                     st.write(f"**Keluhan:** {m['pesan']}")
                     st.write(f"**Balasan Saat Ini:** {m['jawaban']}")
                     
-                    # Form balasan dalam expander
                     with st.form(f"balas_form_{i}"):
                         balasan_baru = st.text_area("Tulis balasan Admin:")
                         if st.form_submit_button("Kirim Balasan"):
@@ -399,33 +478,25 @@ def menu_admin():
         st.rerun()
 
 # ============================
-# HALAMAN PEMBELI (DIPERCANTIK - WEB E-COMMERCE STYLE)
+# HALAMAN PEMBELI
 # ============================
 def menu_pembeli(user_login):
     st.sidebar.title(f"👤 Hallo, {user_login}!")
-    # Menu pembeli dengan emoji
     menu = st.sidebar.radio("Menu Belanja:", [
         "🛍️ Katalog Produk", "🛒 Keranjang & Bayar", "📦 Cek Pesanan Saya", "📞 Pusat Bantuan", "🚪 Logout"
     ])
-    st.title(menu[2:]) # Judul halaman (hapus emojinya)
+    st.title(menu[2:]) 
 
     if menu == "🛍️ Katalog Produk":
         st.markdown("Temukan wewangian favoritmu di sini.")
         
-        # MENGGUNAKAN GRID LAYOUT UNTUK PRODUK
-        # Tampilan 3 kolom per baris
         cols = st.columns(3)
         prod_list = st.session_state['produk_list']
         
         for i, produk in enumerate(prod_list):
-            # Menggunakan modulo 3 untuk menempatkan produk di kolom yang benar
             with cols[i % 3]:
-                # Container ini akan terkena style CSS di atas (kotak putih + bayangan)
                 with st.container():
-                    # Tampilkan Gambar
                     st.image(produk.img_url, use_column_width=True)
-                    
-                    # Detail Produk
                     st.markdown(f"#### {produk.get_nama()}")
                     st.markdown(f"**Rp {produk.get_harga():,}**")
                     
@@ -434,7 +505,6 @@ def menu_pembeli(user_login):
                          stok_msg = f"⚠️ Sisa {produk.get_stok()}!"
                     st.caption(stok_msg)
                     
-                    # Form Beli Mini
                     with st.form(f"beli_form_{i}", border=False):
                         col_qty, col_btn = st.columns([1, 2])
                         with col_qty:
@@ -481,7 +551,6 @@ def menu_pembeli(user_login):
             with col_kanan:
                 st.subheader("Ringkasan Pembayaran")
                 with st.container(border=True):
-                    # Hitung Diskon
                     persen_diskon = 0
                     if total_qty >= 5: persen_diskon = 20
                     elif total_qty >= 3: persen_diskon = 10
@@ -499,7 +568,6 @@ def menu_pembeli(user_login):
                     st.markdown(f"### Total Bayar: Rp {int(total_akhir):,}")
                     
                     if st.button("Bayar Sekarang 💳", type="primary", use_container_width=True):
-                        # Proses bayar
                         for item in keranjang:
                             item['obj_produk'].kurangi_stok(item['qty'])
                             st.session_state['riwayat_transaksi'].append({
@@ -511,7 +579,7 @@ def menu_pembeli(user_login):
                             })
                         st.balloons()
                         st.success("Pembayaran LUNAS! Terima kasih telah berbelanja.")
-                        st.session_state['keranjang'] = [] # Kosongkan keranjang
+                        st.session_state['keranjang'] = []
                         st.rerun()
 
     elif menu == "📦 Cek Pesanan Saya":
@@ -523,7 +591,6 @@ def menu_pembeli(user_login):
                     c1, c2 = st.columns([3, 1])
                     c1.write(f"📦 **{tx['barang']}** (Jumlah: {tx['qty']})")
                     c1.caption(f"Total Harga: Rp {tx['total']:,}")
-                    # Badge Status
                     color = "orange" if tx['status'] == "Diproses" else "blue" if tx['status'] == "Sedang Dikirim" else "green"
                     c2.markdown(f"<div style='background-color:{color};color:white;padding:5px 10px;border-radius:15px;text-align:center;font-size:0.8em'>{tx['status']}</div>", unsafe_allow_html=True)
                 ada = True
@@ -566,7 +633,6 @@ def menu_pembeli(user_login):
     elif menu == "🚪 Logout":
         st.session_state['user_role'] = None
         st.session_state['user_login'] = ""
-        st.toast("Berhasil Logout!")
         st.rerun()
 
 # ============================
@@ -578,7 +644,7 @@ def main():
     user = st.session_state['user_login']
 
     if role is None:
-        # Tampilan Awal (Belum Login) - Sidebar Lebih Bersih
+        # Tampilan Awal (Belum Login)
         st.sidebar.image("https://cdn-icons-png.flaticon.com/512/2917/2917995.png", width=100)
         st.sidebar.title("Selamat Datang")
         menu_awal = st.sidebar.radio("Akses Masuk", ["🔐 Login Akun", "📝 Daftar Baru"])
@@ -596,4 +662,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-```
