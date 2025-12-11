@@ -149,6 +149,22 @@ st.markdown("""
         width: 100% !important;
         margin-bottom: 10px;
     }
+    /* === TAMBAHAN AGAR TEKS TERBACA (HITAM) === */
+    
+    /* 1. Memaksa semua judul dan teks paragraf menjadi hitam */
+    h1, h2, h3, h4, h5, h6, p, li, span, div {
+        color: #000000 !important;
+    }
+
+    /* 2. Pengecualian: Teks di dalam tombol "Beli" biarkan Putih */
+    button p, button span, button div {
+        color: #FFFFFF !important;
+    }
+
+    /* 3. Pengecualian: Teks input (ketikan user) biarkan hitam */
+    input {
+        color: #333333 !important;
+    }
 </style>
 </style>
 """, unsafe_allow_html=True)
