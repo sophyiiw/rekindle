@@ -421,6 +421,9 @@ def menu_admin():
 # ============================
 # 6. HALAMAN PEMBELI (DIPERBAIKI)
 # ============================
+# ============================
+# 6. HALAMAN PEMBELI (FULL FIX)
+# ============================
 def menu_pembeli(user):
     st.sidebar.title(f"Halo, {user}")
     menu = st.sidebar.selectbox("Menu:", ["Katalog", "Keranjang", "Pesanan Saya", "Pusat Bantuan", "Logout"])
@@ -452,9 +455,8 @@ def menu_pembeli(user):
                             })
                             st.toast("Masuk Keranjang!")
 
-    # --- KERANJANG (BAGIAN YANG DIPERBAIKI WARNA TEKSNYA) ---
+    # --- KERANJANG (DIPERBAIKI INDENTASI & WARNA) ---
     elif menu == "Keranjang":
-        # GANTI st.title DENGAN INI (Warna Hitam)
         st.markdown("<h1 style='color: #000000;'>Your Cart</h1>", unsafe_allow_html=True)
         
         cart = st.session_state['keranjang']
@@ -463,8 +465,8 @@ def menu_pembeli(user):
         else:
             col_kiri, col_kanan = st.columns([2, 1], gap="large")
             
+            # Perbaikan Indentasi: 'with' harus menjorok ke dalam 'else'
             with col_kiri:
-                # GANTI st.subheader DENGAN INI (Warna Hitam)
                 st.markdown("<h3 style='color: #000000;'>Product List</h3>", unsafe_allow_html=True)
                 st.markdown("---")
                 for i, item in enumerate(cart):
@@ -472,11 +474,9 @@ def menu_pembeli(user):
                     with c1: 
                         st.image(item['obj_produk'].img_url, width=80)
                     with c2: 
-                        # PERBAIKAN: Nama Produk & Qty jadi hitam/gelap
                         st.markdown(f"<div style='color: #000000; font-weight: bold;'>{item['nama']}</div>", unsafe_allow_html=True)
                         st.markdown(f"<div style='color: #555555; font-size: 0.9em;'>Qty: {item['qty']}</div>", unsafe_allow_html=True)
                     with c3: 
-                        # PERBAIKAN: Harga jadi hitam
                         st.markdown(f"<div style='color: #000000; font-weight: bold;'>Rp {item['harga'] * item['qty']:,}</div>", unsafe_allow_html=True)
                     with c4:
                         if st.button("✕", key=f"d_{i}"):
@@ -501,7 +501,6 @@ def menu_pembeli(user):
                     <hr style="border-top: 1px solid #ccc;">
                 </div>""", unsafe_allow_html=True)
                 
-                # PERBAIKAN: Tulisan Subtotal jadi hitam
                 st.markdown(f"<div style='color: #000000;'>Subtotal: Rp {subtotal:,}</div>", unsafe_allow_html=True)
                 
                 if diskon_persen > 0:
@@ -509,7 +508,6 @@ def menu_pembeli(user):
                 else:
                     st.caption("Beli min 3 items dapat diskon!")
                 
-                # PERBAIKAN: Tulisan Total Akhir jadi hitam tebal
                 st.markdown(f"<div style='color: #000000; font-weight: bold; margin-top: 10px; font-size: 1.1em;'>Total: Rp {int(total_akhir):,}</div>", unsafe_allow_html=True)
                 
                 if st.button("Checkout Sekarang"):
@@ -526,158 +524,186 @@ def menu_pembeli(user):
                     st.balloons()
                     st.success("Pembayaran Berhasil!"); st.rerun()
 
-    # --- PESANAN SAYA ---
-    # --- PESANAN SAYA (TAMPILAN TIMELINE BARU) ---
+    # --- PESANAN SAYA (FIX TAMPILAN TIMELINE) ---
     elif menu == "Pesanan Saya":
         st.title("Riwayat Pesanan")
         
-        # CSS Khusus untuk Timeline (Hanya dimuat di menu ini)
+        # CSS Khusus Timeline (Card Style)
         st.markdown("""
         <style>
+            /* Card Container */
             .order-card {
-                background-color: white;
-                border-radius: 15px;
+                background-color: #FFFFFF;
+                border-radius: 12px;
                 padding: 20px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.05);
                 margin-bottom: 20px;
-                border: 1px solid #e0e0e0;
-                color: #333;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+                border: 1px solid #E0E0E0;
             }
+            /* Header Card */
             .order-header {
                 display: flex;
                 justify-content: space-between;
-                border-bottom: 1px solid #f0f0f0;
-                padding-bottom: 10px;
+                align-items: center;
+                border-bottom: 1px solid #F0F0F0;
+                padding-bottom: 12px;
                 margin-bottom: 15px;
             }
-            .timeline-item {
+            .status-pill {
+                background-color: #E3F2FD;
+                color: #1565C0;
+                padding: 5px 15px;
+                border-radius: 20px;
+                font-size: 0.85rem;
+                font-weight: 600;
+            }
+            .status-pill.success {
+                background-color: #E8F5E9;
+                color: #2E7D32;
+            }
+            /* Timeline Items */
+            .timeline-row {
+                display: flex;
+                margin-bottom: 20px;
                 position: relative;
-                padding-left: 30px;
-                margin-bottom: 15px;
-                border-left: 2px solid #e0e0e0;
             }
-            .timeline-item:last-child {
-                border-left: 2px solid transparent;
+            .timeline-icon {
+                width: 40px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                margin-right: 15px;
             }
-            .timeline-dot {
-                position: absolute;
-                left: -6px;
-                top: 0;
-                width: 10px;
-                height: 10px;
+            .dot-circle {
+                width: 12px;
+                height: 12px;
+                background-color: #E0E0E0;
                 border-radius: 50%;
-                background-color: #e0e0e0;
+                z-index: 2;
+            }
+            .line-vertical {
+                width: 2px;
+                height: 100%;
+                background-color: #E0E0E0;
+                position: absolute;
+                left: 19px; /* Posisi tengah icon (40px/2) - 1px */
+                top: 12px;
+                z-index: 1;
+            }
+            /* Menghilangkan garis di item terakhir */
+            .timeline-row:last-child .line-vertical {
+                display: none;
             }
             .timeline-content {
-                font-size: 0.9rem;
-                line-height: 1.2;
+                flex: 1;
             }
-            .timeline-title {
-                font-weight: bold;
-                color: #333;
-                margin-bottom: 4px;
-            }
-            .timeline-date {
-                font-size: 0.8rem;
-                color: #888;
-            }
+            .tm-title { font-weight: bold; color: #333; font-size: 1rem; }
+            .tm-desc { color: #888; font-size: 0.85rem; margin-top: 2px; }
             
-            /* Warna Aktif (Hijau) */
-            .active-dot { background-color: #4CAF50; box-shadow: 0 0 0 3px #E8F5E9; }
-            .active-line { border-left-color: #4CAF50; }
-            .status-badge {
-                background-color: #E3F2FD;
-                color: #1976D2;
-                padding: 4px 12px;
-                border-radius: 20px;
-                font-size: 0.8rem;
-                font-weight: bold;
-            }
-            .success-badge {
-                 background-color: #E8F5E9; color: #2E7D32;
-            }
+            /* Active State (Hijau) */
+            .active .dot-circle { background-color: #4CAF50; box-shadow: 0 0 0 3px #E8F5E9; }
+            .active .line-vertical { background-color: #4CAF50; }
+            .active .tm-title { color: #000; }
         </style>
         """, unsafe_allow_html=True)
 
         found = False
-        # Loop semua transaksi
         for t in st.session_state['riwayat_transaksi']:
             if t['pembeli'] == user:
                 found = True
                 status_db = t['status']
                 
-                # LOGIKA VISUAL TIMELINE
-                # Kita tentukan level progress (1, 2, atau 3) berdasarkan status database
-                progress_level = 0
-                badge_class = "status-badge"
+                # Logic Progress (1, 2, atau 3)
+                progress = 0
+                badge_style = "status-pill"
                 
                 if status_db == "Diproses":
-                    progress_level = 1
+                    progress = 1
                 elif status_db == "Sedang Dikirim":
-                    progress_level = 2
+                    progress = 2
                 elif status_db == "Selesai":
-                    progress_level = 3
-                    badge_class = "status-badge success-badge"
+                    progress = 3
+                    badge_style = "status-pill success"
 
-                # Helper function kecil untuk menentukan warna dot & garis
-                def get_class(level_item, current_level):
-                    return "active-dot" if level_item <= current_level else ""
-                
-                def get_line(level_item, current_level):
-                    return "active-line" if level_item < current_level else ""
+                # Fungsi Helper untuk class HTML
+                def get_active(lvl, curr): return "active" if lvl <= curr else ""
 
-                # Render HTML Card
-                st.markdown(f"""
-                <div class="order-card">
-                    <div class="order-header">
-                        <div>
-                            <div style="font-weight:bold; font-size:1.1rem; color:#000;">{t['barang']}</div>
-                            <div style="font-size:0.9rem; color:#666;">Qty: {t['qty']} | Total: Rp {t['total']:,}</div>
-                        </div>
-                        <div>
-                            <span class="{badge_class}">{status_db}</span>
-                        </div>
-                    </div>
+                # HTML Card (Tanpa indentasi di dalam string agar tidak jadi kotak hitam)
+                html_card = f"""
+<div class="order-card">
+    <div class="order-header">
+        <div>
+            <div style="font-weight:bold; font-size:1.1rem; color:#000;">{t['barang']}</div>
+            <div style="font-size:0.9rem; color:#666;">Qty: {t['qty']} | Total: Rp {t['total']:,}</div>
+        </div>
+        <div class="{badge_style}">{status_db}</div>
+    </div>
+    
+    <div style="padding-left: 10px;">
+        <div class="timeline-row {get_active(1, progress)}">
+            <div class="timeline-icon">
+                <div class="dot-circle"></div>
+                <div class="line-vertical"></div>
+            </div>
+            <div class="timeline-content">
+                <div class="tm-title">Order Confirmed</div>
+                <div class="tm-desc">Pesanan telah diterima sistem.</div>
+            </div>
+        </div>
 
-                    <div style="margin-top: 10px;">
-                        
-                        <div class="timeline-item {get_line(1, progress_level)}">
-                            <div class="timeline-dot {get_class(1, progress_level)}"></div>
-                            <div class="timeline-content">
-                                <div class="timeline-title">Order Confirmed</div>
-                                <div class="timeline-date">Pesanan telah diterima sistem</div>
-                            </div>
-                        </div>
+        <div class="timeline-row {get_active(2, progress)}">
+            <div class="timeline-icon">
+                <div class="dot-circle"></div>
+                <div class="line-vertical"></div>
+            </div>
+            <div class="timeline-content">
+                <div class="tm-title">Shipping</div>
+                <div class="tm-desc">Kurir sedang mengantar pesanan ke lokasi.</div>
+            </div>
+        </div>
 
-                        <div class="timeline-item {get_line(2, progress_level)}">
-                            <div class="timeline-dot {get_class(2, progress_level)}"></div>
-                            <div class="timeline-content">
-                                <div class="timeline-title">Shipping & Transit</div>
-                                <div class="timeline-date">Kurir sedang menuju lokasi</div>
-                            </div>
-                        </div>
-
-                        <div class="timeline-item">
-                            <div class="timeline-dot {get_class(3, progress_level)}"></div>
-                            <div class="timeline-content">
-                                <div class="timeline-title">Sent to Customer</div>
-                                <div class="timeline-date">Pesanan sampai di tujuan</div>
-                            </div>
-                        </div>
-                    
-                    </div>
-                    
-                    <div style="margin-top:15px; text-align:center;">
-                        <button style="background:none; border:1px solid #4CAF50; color:#4CAF50; border-radius:20px; padding:5px 20px; cursor:pointer;">
-                             Rate this delivery
-                        </button>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+        <div class="timeline-row {get_active(3, progress)}">
+            <div class="timeline-icon">
+                <div class="dot-circle"></div>
+            </div>
+            <div class="timeline-content">
+                <div class="tm-title">Sent to Customer</div>
+                <div class="tm-desc">Pesanan telah sampai di tujuan.</div>
+            </div>
+        </div>
+    </div>
+    
+    <div style="margin-top:15px; text-align:center;">
+        <button style="background:transparent; border:1px solid #4CAF50; color:#4CAF50; padding:6px 20px; border-radius:20px; cursor:pointer; font-size:0.9rem;">
+            Rate this delivery
+        </button>
+    </div>
+</div>
+"""
+                st.markdown(html_card, unsafe_allow_html=True)
 
         if not found:
             st.info("Belum ada riwayat pesanan.")
 
+    # --- PUSAT BANTUAN ---
+    elif menu == "Pusat Bantuan":
+        st.title("Pusat Bantuan")
+        tab1, tab2 = st.tabs(["Tulis Laporan", "Riwayat"])
+        with tab1:
+            pesan = st.text_area("Keluhan:")
+            if st.button("Kirim"):
+                st.session_state['inbox_laporan'].append({"pengirim": user, "pesan": pesan, "jawaban": "Belum dibalas"})
+                st.success("Terkirim")
+        with tab2:
+            for chat in st.session_state['inbox_laporan']:
+                if chat['pengirim'] == user:
+                    st.write(f"Q: {chat['pesan']}"); st.write(f"A: {chat['jawaban']}"); st.markdown("---")
+
+    elif menu == "Logout":
+        st.session_state['keranjang'] = []
+        st.session_state['user_role'] = None
+        st.session_state['user_login'] = ""
+        st.rerun()
     # --- PUSAT BANTUAN ---
     elif menu == "Pusat Bantuan":
         st.title("Pusat Bantuan")
@@ -712,5 +738,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
