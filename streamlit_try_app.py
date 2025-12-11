@@ -354,4 +354,238 @@ def menu_admin():
                         obj_user.username = val_baru
                         db[val_baru] = obj_user
                         del db[target]
-                        st.
+                        st.success(f">> Sip! Berubah jadi {val_baru}")
+                        st.rerun()
+
+    elif menu == "Lihat Penjualan":
+        st.subheader("--- RIWAYAT PENJUALAN ---")
+        cari = st.text_input("Cari nama pembeli:")
+        
+        total_pendapatan = 0
+        tx_list = st.session_state['riwayat_transaksi']
+        
+        if len(tx_list) > 0:
+            for tx in tx_list:
+                if cari.lower() in tx['pembeli'].lower():
+                    st.write(f"{tx['pembeli']} | Beli: {tx['barang']} | Rp {tx['total']} | Status: {tx['status']}")
+                    total_pendapatan += tx['total']
+            st.divider()
+            st.metric("TOTAL UANG MASUK", f"Rp {total_pendapatan}")
+        else:
+            st.info("Belum ada data penjualan.")
+
+    elif menu == "Update Status Pengiriman":
+        st.subheader("--- UPDATE STATUS PESANAN ---")
+        tx_list = st.session_state['riwayat_transaksi']
+        
+        # Buat list string untuk selectbox
+        opsi_tx = []
+        for i, tx in enumerate(tx_list):
+            opsi_tx.append(f"{i+1}. {tx['pembeli']} - {tx['barang']} [{tx['status']}]")
+            
+        if opsi_tx:
+            pilihan = st.selectbox("Pilih transaksi:", opsi_tx)
+            status_baru = st.selectbox("Status Baru:", ["Diproses", "Sedang Dikirim", "Selesai"])
+            
+            if st.button("Update Status"):
+                # Ambil index dari string (misal "1. naya..." ambil angka 0)
+                idx = int(pilihan.split(".")[0]) - 1
+                tx_list[idx]['status'] = status_baru
+                st.success(f">> Status diubah jadi: {status_baru}")
+                st.rerun()
+        else:
+            st.info("Tidak ada transaksi.")
+
+    elif menu == "Cek Laporan Masalah":
+        st.subheader("--- INBOX LAPORAN USER ---")
+        laporan_list = st.session_state['inbox_laporan']
+        
+        if not laporan_list:
+            st.info("Tidak ada pesan masuk.")
+        else:
+            # Pilih pesan untuk dibalas
+            opsi_pesan = [f"{i+1}. Dari {m['pengirim']}: {m['pesan']}" for i, m in enumerate(laporan_list)]
+            pilih_pesan = st.selectbox("Pilih Pesan:", opsi_pesan)
+            
+            idx = int(pilih_pesan.split(".")[0]) - 1
+            st.write(f"**Pesan:** {laporan_list[idx]['pesan']}")
+            st.write(f"**Balasan Saat Ini:** {laporan_list[idx]['jawaban']}")
+            
+            balasan_baru = st.text_input("Tulis balasan Admin:")
+            if st.button("Kirim Balasan"):
+                laporan_list[idx]['jawaban'] = balasan_baru
+                st.success(">> Balasan terkirim!")
+                st.rerun()
+
+    elif menu == "Export/Import Data":
+        tab1, tab2 = st.tabs(["Export", "Import"])
+        with tab1:
+            fitur_export_data()
+        with tab2:
+            fitur_import_data()
+
+    elif menu == "Logout":
+        st.session_state['user_role'] = None
+        st.session_state['user_login'] = ""
+        st.rerun()
+
+# ============================
+# HALAMAN PEMBELI
+# ============================
+def menu_pembeli(user_login):
+    st.sidebar.title(f"PEMBELI ({user_login})")
+    menu = st.sidebar.radio("Menu:", [
+        "Belanja", "Keranjang & Bayar", "Cek Pesanan", "Lapor Masalah", "Logout"
+    ])
+
+    if menu == "Belanja":
+        st.subheader("--- KATALOG PRODUK ---")
+        # Tampilkan produk dalam Grid
+        cols = st.columns(3)
+        prod_list = st.session_state['produk_list']
+        
+        for i, produk in enumerate(prod_list):
+            with cols[i % 3]:
+                st.markdown(f"### {produk.get_nama()}")
+                st.write(f"Harga: Rp {produk.get_harga()}")
+                st.write(f"Stok: {produk.get_stok()}")
+                
+                with st.form(f"beli_{i}"):
+                    qty = st.number_input("Jml Beli", min_value=1, max_value=produk.get_stok(), key=f"q_{i}")
+                    add = st.form_submit_button("Masuk Keranjang")
+                    if add:
+                        if qty <= produk.get_stok():
+                             item_belanja = {
+                                "obj_produk": produk, # Simpan referensi objek
+                                "nama": produk.get_nama(),
+                                "harga": produk.get_harga(),
+                                "qty": qty
+                            }
+                             st.session_state['keranjang'].append(item_belanja)
+                             st.success(">> Berhasil masuk keranjang!")
+                        else:
+                             st.error("Stok kurang!")
+
+    elif menu == "Keranjang & Bayar":
+        st.subheader("--- KASIR REKINDLE ---")
+        keranjang = st.session_state['keranjang']
+        
+        if not keranjang:
+            st.warning(">> Keranjang kosong.")
+        else:
+            total_belanja = 0
+            total_qty = 0
+            
+            st.write("Rincian Belanja:")
+            for item in keranjang:
+                subtotal = item['harga'] * item['qty']
+                st.write(f"- {item['nama']} (x{item['qty']}) = Rp {subtotal}")
+                total_belanja += subtotal
+                total_qty += item['qty']
+            
+            st.divider()
+            
+            # Hitung Diskon
+            persen_diskon = 0
+            if total_qty >= 5:
+                persen_diskon = 20
+            elif total_qty >= 3:
+                persen_diskon = 10
+            
+            potongan_harga = total_belanja * (persen_diskon / 100)
+            total_akhir = total_belanja - potongan_harga
+            
+            st.write(f"Total Awal   : Rp {int(total_belanja)}")
+            if persen_diskon > 0:
+                st.success(f"DISKON {persen_diskon}% : -Rp {int(potongan_harga)}")
+            else:
+                st.info("DISKON : - (Beli min 3 dpt diskon!)")
+            
+            st.markdown(f"### TOTAL BAYAR : Rp {int(total_akhir)}")
+            
+            if st.button("Bayar Sekarang"):
+                # Proses bayar
+                for item in keranjang:
+                    # Kurangi stok di object aslinya
+                    item['obj_produk'].kurangi_stok(item['qty'])
+                    # Masukkan history
+                    st.session_state['riwayat_transaksi'].append({
+                        "pembeli": user_login,
+                        "barang": item['nama'],
+                        "qty": item['qty'],
+                        "total": item['harga'] * item['qty'],
+                        "status": "Diproses"
+                    })
+                st.balloons()
+                st.success(">> Pembayaran LUNAS! Terima kasih.")
+                st.session_state['keranjang'] = [] # Kosongkan keranjang
+                st.rerun()
+
+    elif menu == "Cek Pesanan":
+        st.subheader("--- RIWAYAT PESANAN SAYA ---")
+        tx_list = st.session_state['riwayat_transaksi']
+        ada = False
+        for tx in tx_list:
+            if tx['pembeli'] == user_login:
+                st.write(f"- {tx['barang']} (x{tx['qty']}) | Total: Rp {tx['total']} | Status: **[{tx['status']}]**")
+                ada = True
+        if not ada:
+            st.info(">> Belum ada pesanan.")
+
+    elif menu == "Lapor Masalah":
+        st.subheader("--- PUSAT BANTUAN ---")
+        tab_tulis, tab_cek = st.tabs(["Tulis Laporan", "Cek Riwayat"])
+        
+        with tab_tulis:
+            with st.form("lapor_form"):
+                pesan_user = st.text_area("Tulis keluhan/pertanyaan Anda:")
+                kirim = st.form_submit_button("Kirim Laporan")
+                if kirim:
+                    st.session_state['inbox_laporan'].append({
+                        "pengirim": user_login,
+                        "pesan": pesan_user,
+                        "jawaban": "Belum dibalas"
+                    })
+                    st.success(">> Laporan terkirim ke Admin.")
+
+        with tab_cek:
+            laporan_list = st.session_state['inbox_laporan']
+            ada_laporan = False
+            for chat in laporan_list:
+                if chat['pengirim'] == user_login:
+                    st.write(f"**Q (Anda):** {chat['pesan']}")
+                    st.info(f"**A (Admin):** {chat['jawaban']}")
+                    st.divider()
+                    ada_laporan = True
+            if not ada_laporan:
+                st.write(">> Belum ada riwayat laporan.")
+
+    elif menu == "Logout":
+        st.session_state['user_role'] = None
+        st.session_state['user_login'] = ""
+        st.rerun()
+
+# ============================
+# MAIN PROGRAM (NAVIGASI UTAMA)
+# ============================
+def main():
+    # Cek Role
+    role = st.session_state['user_role']
+    user = st.session_state['user_login']
+
+    if role is None:
+        # Tampilan Awal (Belum Login)
+        menu_awal = st.sidebar.selectbox("Menu Utama", ["Login", "Register"])
+        if menu_awal == "Login":
+            halaman_login()
+        else:
+            halaman_register()
+            
+    elif role == "admin":
+        menu_admin()
+        
+    elif role == "pembeli":
+        menu_pembeli(user)
+
+if __name__ == "__main__":
+    main()
