@@ -285,136 +285,15 @@ def halaman_depan_split():
 # ============================
 # 5. HALAMAN ADMIN
 # ============================
-def menu_admin():
-    st.sidebar.title("Admin Dashboard")
-    menu = st.sidebar.radio("Menu:", 
-        ["Cek Stok", "Tambah Produk", "Edit Produk", "Kelola Role", 
-         "Lihat Penjualan", "Update Status", "Laporan Masalah", "Export/Import", "Logout"])
-
-    # 1. Cek Stok
-    if menu == "Cek Stok":
-        st.title("Stok Gudang")
-        data_tampil = []
-        for p in st.session_state['produk_list']:
-            status = "Aman"
-            if p.get_stok() < 5: status = "!!! STOK MENIPIS !!!"
-            data_tampil.append({
-                "Nama": p.get_nama(), "Harga": p.get_harga(), "Stok": p.get_stok(), "Status": status
-            })
-        st.table(data_tampil)
-
-    # 2. Tambah Produk
-    elif menu == "Tambah Produk":
-        st.title("Tambah Produk Baru")
-        nama = st.text_input("Nama Produk")
-        harga = st.number_input("Harga", min_value=0, step=1000)
-        stok = st.number_input("Stok Awal", min_value=0, step=1)
-        if st.button("Simpan Produk"):
-            st.session_state['produk_list'].append(ProdukLilin(nama, int(harga), int(stok), "https://via.placeholder.com/150"))
-            st.success("Produk berhasil ditambahkan!")
-
-    # 3. Edit Produk
-    elif menu == "Edit Produk":
-        st.title("Edit Produk")
-        nama_list = [p.get_nama() for p in st.session_state['produk_list']]
-        pilih_nama = st.selectbox("Pilih Produk", nama_list)
-        produk_ditemukan = cari_produk(pilih_nama)
-        
-        if produk_ditemukan:
-            c1, c2, c3 = st.columns(3)
-            with c1: new_n = st.text_input("Ubah Nama", value=produk_ditemukan.get_nama())
-            with c2: new_h = st.number_input("Ubah Harga", value=produk_ditemukan.get_harga())
-            with c3: new_s = st.number_input("Ubah Stok", value=produk_ditemukan.get_stok())
-            if st.button("Update"):
-                produk_ditemukan.set_nama(new_n)
-                produk_ditemukan.set_harga(int(new_h))
-                produk_ditemukan.set_stok(int(new_s))
-                st.success("Update Berhasil")
-
-    # 4. Kelola Role
-    elif menu == "Kelola Role":
-        st.title("Manajemen User")
-        list_users = list(st.session_state['users_db'].keys())
-        target = st.selectbox("Pilih User", list_users)
-        user_obj = st.session_state['users_db'][target]
-        st.write(f"Role: **{user_obj.role}** | Pass: **{user_obj.password}**")
-        
-        opsi = st.selectbox("Action", ["Ganti Role", "Ganti Password", "Rename User"])
-        if opsi == "Ganti Role":
-            r_baru = st.selectbox("Role Baru", ["admin", "pembeli"])
-            if st.button("Simpan"): user_obj.role = r_baru; st.success("Saved.")
-        elif opsi == "Ganti Password":
-            p_baru = st.text_input("Password Baru")
-            if st.button("Simpan"): user_obj.password = p_baru; st.success("Saved.")
-        elif opsi == "Rename User":
-            n_baru = st.text_input("Username Baru")
-            if st.button("Simpan"):
-                if n_baru in st.session_state['users_db']: st.error("Taken!")
-                else:
-                    user_obj.username = n_baru
-                    st.session_state['users_db'][n_baru] = user_obj
-                    del st.session_state['users_db'][target]
-                    st.success("Renamed!"); st.rerun()
-
-    # 5. Lihat Penjualan
-    elif menu == "Lihat Penjualan":
-        st.title("Laporan Penjualan")
-        search = st.text_input("Cari Pembeli")
-        data = [t for t in st.session_state['riwayat_transaksi'] if search.lower() in t['pembeli'].lower()]
-        st.dataframe(data)
-        st.info(f"Total Pendapatan: Rp {sum(t['total'] for t in data)}")
-
-    # 6. Update Status
-    elif menu == "Update Status":
-        st.title("Update Status Pesanan")
-        if not st.session_state['riwayat_transaksi']: st.write("Kosong.")
-        else:
-            opts = [f"{i+1}. {t['pembeli']} - {t['barang']} [{t['status']}]" for i,t in enumerate(st.session_state['riwayat_transaksi'])]
-            pilih = st.selectbox("Pilih", opts)
-            idx = int(pilih.split(".")[0]) - 1
-            stat = st.selectbox("Status Baru", ["Diproses", "Sedang Dikirim", "Selesai"])
-            if st.button("Update"):
-                st.session_state['riwayat_transaksi'][idx]['status'] = stat
-                st.success("Updated!"); st.rerun()
-
-    # 7. Laporan Masalah
-    elif menu == "Laporan Masalah":
-        st.title("Inbox Keluhan")
-        for i, msg in enumerate(st.session_state['inbox_laporan']):
-            with st.expander(f"Dari {msg['pengirim']} ({msg['jawaban']})"):
-                st.write(msg['pesan'])
-                balas = st.text_input(f"Balas #{i}", key=f"b{i}")
-                if st.button(f"Kirim #{i}", key=f"k{i}"):
-                    st.session_state['inbox_laporan'][i]['jawaban'] = balas
-                    st.success("Terkirim"); st.rerun()
-
-    # 8. Export/Import
-    elif menu == "Export/Import":
-        st.title("Backup Data")
-        c1, c2 = st.columns(2)
-        with c1:
-            st.subheader("Export CSV")
-            csv_u = convert_to_csv(st.session_state['users_db'], ['User','Pass','Role'], 'user')
-            st.download_button("Download User", csv_u, "users.csv", "text/csv")
-            csv_p = convert_to_csv(st.session_state['produk_list'], ['Nama','Harga','Stok'], 'produk')
-            st.download_button("Download Produk", csv_p, "produk.csv", "text/csv")
-        with c2:
-            st.subheader("Import CSV")
-            upl = st.file_uploader("Upload File")
-            jenis = st.selectbox("Jenis", ["User", "Produk", "Penjualan"])
-            if upl and st.button("Import"):
-                sio = io.StringIO(upl.getvalue().decode("utf-8"))
-                if jenis == "User":
-                    r = csv.reader(sio); next(r)
-                    st.session_state['users_db'] = {row[0]: User(row[0], row[1], row[2]) for row in r}
-                elif jenis == "Produk":
-                    r = csv.reader(sio); next(r)
-                    st.session_state['produk_list'] = [ProdukLilin(row[0], int(row[1]), int(row[2])) for row in r]
-                st.success("Import Sukses")
-
-    elif menu == "Logout":
-        st.session_state['user_role'] = None; st.rerun()
-
+  user_login = st.session_state.current_user
+    st.sidebar.title(f"Halo, {user_login}")
+    menu = st.sidebar.radio("Menu Pembeli:", ["Belanja", "Keranjang & Bayar", "Pesanan Saya", "Pusat Bantuan"])
+    
+    if st.sidebar.button("Logout"):
+        # Reset keranjang saat logout (opsional, tapi bagus utk UX)
+        st.session_state.keranjang = [] 
+        st.session_state.login_status = False
+        st.rerun()
 # ============================
 # 6. HALAMAN PEMBELI
 # ============================
@@ -738,6 +617,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
