@@ -1,8 +1,9 @@
-import csv 
-import os
+import streamlit as st
+import csv
+import io
 
 # ============================
-# CLASS USER
+# 1. CLASS DEFINITIONS (TETAP SAMA)
 # ============================
 class User:
     def __init__(self, username, password, role):
@@ -10,18 +11,12 @@ class User:
         self.password = password
         self.role = role
 
-
-# ============================
-# CLASS PRODUK LILIN
-# ============================
 class ProdukLilin:
     def __init__(self, nama, harga, stok):
-        # Menggunakan tanda underscore (_) artinya data ini dilindungi
         self._nama = nama
         self._harga = harga
         self._stok = stok
 
-    # --- GETTER (Untuk Mengambil Data) ---
     def get_nama(self):
         return self._nama
     
@@ -31,7 +26,6 @@ class ProdukLilin:
     def get_stok(self):
         return self._stok
 
-    # --- SETTER (Untuk Mengubah Data) ---
     def set_nama(self, nama_baru):
         self._nama = nama_baru
 
@@ -41,617 +35,467 @@ class ProdukLilin:
     def set_stok(self, stok_baru):
         self._stok = stok_baru
 
-    # --- METHOD KHUSUS (LOGIKA BISNIS) ---
     def kurangi_stok(self, jumlah):
         self._stok = self._stok - jumlah
 
-    def info(self):
-        # [cite_start]Logika Peringatan jika stok menipis [cite: 13]
+    # Di Streamlit, info() kita ubah jadi return string atau dictionary agar mudah ditampilkan
+    def info_str(self):
         pesan_stok = str(self._stok)
+        warning = ""
         if self._stok < 5:
-            pesan_stok = str(self._stok) + " (!!! STOK MENIPIS !!!)"
-            
-        # Tampilan sederhana baris per baris
-        print("   Nama  : " + self._nama)
-        print("   Harga : Rp " + str(self._harga))
-        print("   Stok  : " + pesan_stok)
-        print("   ------------------------")
+            warning = " (!!! STOK MENIPIS !!!)"
+        return f"{self._nama} | Rp {self._harga} | Stok: {pesan_stok}{warning}"
 
 # ============================
-# DATABASE (DICTIONARY & LIST)
+# 2. INISIALISASI DATABASE (SESSION STATE)
 # ============================
+# Streamlit me-refresh script setiap ada interaksi. 
+# Kita harus simpan data di st.session_state agar tidak hilang saat refresh.
 
-# Database User (DICTIONARY)
-users_db = {
-    "admin": User("admin", "123", "admin"),
-    "naya":  User("naya", "abc", "pembeli"),
-    "shifa":   User("shifa", "abc", "pembeli")
-}
+if 'users_db' not in st.session_state:
+    st.session_state.users_db = {
+        "admin": User("admin", "123", "admin"),
+        "naya":  User("naya", "abc", "pembeli"),
+        "shifa": User("shifa", "abc", "pembeli")
+    }
 
-# Database Produk (LIST)
-produk_list = [
-    ProdukLilin("Lilin Lavender", 50000, 10),
-    ProdukLilin("Lilin Vanila", 45000, 3), 
-    ProdukLilin("Lilin Sandalwood", 60000, 5)
-]
+if 'produk_list' not in st.session_state:
+    st.session_state.produk_list = [
+        ProdukLilin("Lilin Lavender", 50000, 10),
+        ProdukLilin("Lilin Vanila", 45000, 3), 
+        ProdukLilin("Lilin Sandalwood", 60000, 5)
+    ]
 
-# Database Transaksi (LIST)
-riwayat_transaksi = []
+if 'riwayat_transaksi' not in st.session_state:
+    st.session_state.riwayat_transaksi = []
 
-# Database Keranjang (LIST)
-keranjang = [] 
+if 'keranjang' not in st.session_state:
+    st.session_state.keranjang = [] 
 
-# Database Laporan Masalah / Chat (LIST)
-inbox_laporan = []
+if 'inbox_laporan' not in st.session_state:
+    st.session_state.inbox_laporan = []
 
-# ============================
-# FUNGSI EXPORT DATA (CSV)
-# ============================
-def export_data():
-    while True:
-        print("\n--- MENU EXPORT DATA (CSV) ---")
-        print("1. Export Data User")
-        print("2. Export Data Produk")
-        print("3. Export Riwayat Penjualan")
-        print("4. Export Laporan Masalah")
-        print("0. Kembali")
-        
-        pilih = input("Pilih menu export: ")
-
-        # --- 1. EXPORT USER ---
-        if pilih == "1":
-            filename = "data_users.csv"
-            header = ['Username', 'Password', 'Role']
-            
-            # Siapkan data baris per baris
-            data_rows = []
-            for username in users_db:
-                data_user = users_db[username] 
-                data_rows.append([data_user.username, data_user.password, data_user.role])
-            
-            # Simpan ke file
-            with open(filename, "w", newline='') as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow(header)     # Tulis Judul
-                writer.writerows(data_rows) # Tulis Isi
-            print(">> Sukses export data user!")
-            
-        # --- 2. EXPORT PRODUK ---
-        elif pilih == "2":
-            filename = "data_produk.csv"
-            header = ['Nama Produk', 'Harga', 'Stok']
-        
-            # Siapkan data baris per baris
-            data_rows = []
-            # Ambil data pakai Getter
-            for produk in produk_list:
-                data_rows.append([produk.get_nama(), produk.get_harga(), produk.get_stok()])
-        
-            # Simpan ke file
-            with open(filename, "w", newline='') as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow(header)
-                writer.writerows(data_rows)
-            print(">> Sukses export data produk!")
-
-        # --- 3. EXPORT PENJUALAN ---
-        elif pilih == "3":
-            if len(riwayat_transaksi) == 0:
-                print("Data penjualan masih kosong.")
-            else:
-                filename = "data_penjualan.csv"
-                header = ['pembeli', 'barang', 'qty', 'total', 'status']
-            
-                with open(filename, "w", newline='') as csvfile:
-                    writer = csv.DictWriter(csvfile, fieldnames=header)
-                    writer.writeheader()
-                    writer.writerows(riwayat_transaksi)
-                print(">> Sukses export data penjualan!")
-
-        # --- 4. EXPORT LAPORAN ---
-        elif pilih == "4":
-            if len(inbox_laporan) == 0:
-                print("Data laporan masih kosong.")
-            else:
-                filename = "data_laporan.csv"
-                header = ['pengirim', 'pesan', 'jawaban']
-            
-                with open(filename, "w", newline='') as csvfile:
-                    writer = csv.DictWriter(csvfile, fieldnames=header)
-                    writer.writeheader()
-                    writer.writerows(inbox_laporan)
-                print(">> Sukses export data laporan!")
-    
-        elif pilih == "0":
-            print("Batal export.")
-            break
+if 'login_status' not in st.session_state:
+    st.session_state.login_status = False
+    st.session_state.current_user = None
+    st.session_state.current_role = None
 
 # ============================
-# FUNGSI IMPORT (LOAD) 
-# ============================
-def import_data():
-    print("\n--- IMPORT DATA (LOAD SAVE FILE) ---")
-    print("Peringatan: Data lama akan ditimpa.")
-    yakin = input("Yakin load data? (y/n): ")
-    if yakin != 'y': return
-
-    # 1. IMPORT USER (ARRAY STYLE)
-    if os.path.exists("data_users.csv"):
-        with open("data_users.csv", "r") as csvfile:
-            csvreader = csv.reader(csvfile)
-            fields = next(csvreader) # Skip Header
-            rows = []
-            for row in csvreader:
-                rows.append(row)
-        # Masukkan ke Database
-        users_db.clear()
-        for row in rows:
-            # row[0]=username, row[1]=password, row[2]=role
-            users_db[row[0]] = User(row[0], row[1], row[2])
-        print(">> Sukses load User.")
-    else:
-        print(">> File data_users.csv tidak ada.")
-
-    # 2. IMPORT PRODUK (ARRAY STYLE)
-    if os.path.exists("data_produk.csv"):
-        with open("data_produk.csv", "r") as csvfile:
-            csvreader = csv.reader(csvfile)
-            fields = next(csvreader)
-            rows = []
-            for row in csvreader:
-                rows.append(row)
-        # Masukkan ke Database
-        produk_list.clear()
-        for row in rows:
-            nama = row[0]
-            harga = int(row[1]) # Ubah text ke angka
-            stok = int(row[2])
-            produk_list.append(ProdukLilin(nama, harga, stok))
-        print(">> Sukses load Produk.")
-    else:
-        print(">> File data_produk.csv tidak ada.")
-
-    # 3. IMPORT PENJUALAN (DICT STYLE)
-    if os.path.exists("data_penjualan.csv"):
-        with open("data_penjualan.csv", "r") as csvfile:
-            csvreader = csv.DictReader(csvfile)
-            rows = []
-            for row in csvreader:
-                rows.append(row)
-        # Masukkan ke Database
-        riwayat_transaksi.clear()
-        for row in rows:
-            # Perbaiki tipe data angka
-            row['qty'] = int(row['qty'])
-            row['total'] = int(row['total'])
-            riwayat_transaksi.append(row)
-        print(">> Sukses load Penjualan.")
-    else:
-        print(">> File data_penjualan.csv tidak ada.")
-
-    # 4. IMPORT LAPORAN (DICT STYLE)
-    if os.path.exists("data_laporan.csv"):
-        with open("data_laporan.csv", "r") as csvfile:
-            csvreader = csv.DictReader(csvfile)
-            rows = []
-            for row in csvreader:
-                rows.append(row)
-        # Masukkan ke Database
-        inbox_laporan.clear()
-        for row in rows:
-            inbox_laporan.append(row)
-        print(">> Sukses load Laporan.")
-    else:
-        print(">> File data_laporan.csv tidak ada.")
-
-# ============================
-# FUNGSI BANTUAN
+# 3. FUNGSI HELPER
 # ============================
 def cari_produk(nama_dicari):
-    for produk in produk_list:
+    for produk in st.session_state.produk_list:
         if produk.get_nama().lower() == nama_dicari.lower():
-            return produk 
+            return produk
+    return None
 
-# ============================
-# LOGIN
-# ============================
-def login():
-    print("\n=== LOGIN REKINDLE ===")
-    username = input("Username: ")
-    password = input("Password: ")
-
-    # 1. AMBIL DATA USER DARI DICTIONARY
-    # users_db.get(username) akan mencari kunci. 
-    # Kalau tidak ada, dia mengembalikan None (Kosong).
-    user = users_db.get(username)   
-
-    # 2. CEK APAKAH USERNAME DITEMUKAN?
-    if user is None:
-        print("Gagal: Username tidak ditemukan!")
-        return None, None # Balikkan None dua kali (Role & Username kosong)
-
-    # 3. CEK APAKAH PASSWORD COCOK?
-    # Karena 'user' adalah Object Class, kita akses password pakai .password
-    if user.password != password:
-        print("Gagal: Password salah!")
-        return None, None
-
-    # 4. KALAU LOLOS SEMUA PENGECEKAN
-    print(f"Login berhasil! Halo, {user.username}")
-    return user.role, user.username
-
-# ============================
-# REGISTERASI
-# ============================
-def register():
-    print("\n=== DAFTAR AKUN BARU ===")
-    username = input("Username baru: ")
-
-    # 1. CEK DULU APAKAH SUDAH ADA?
-    # Kita coba ambil datanya.
-    cek_user = users_db.get(username)
-
-    # 2. KALAU TERNYATA ADA ISINYA (Bukan None), BERARTI SUDAH TERPAKAI
-    if cek_user is not None:
-        print(">> Gagal: Username sudah terpakai!")
-        return 
-    # 3. KALAU KOSONG (None), LANJUT BUAT AKUN
-    password = input("Password baru: ")
+def convert_to_csv(data, header, type='list_obj'):
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(header)
     
-    # Buat Object User baru, lalu simpan ke dictionary 'users'
-    users_db[username] = User(username, password, "pembeli")
-    print("Sukses: Akun berhasil dibuat! Silakan Login.")
+    if type == 'user':
+        for username in data:
+            u = data[username]
+            writer.writerow([u.username, u.password, u.role])
+    elif type == 'produk':
+        for p in data:
+            writer.writerow([p.get_nama(), p.get_harga(), p.get_stok()])
+    elif type == 'dict':
+        writer = csv.DictWriter(output, fieldnames=header)
+        writer.writeheader()
+        writer.writerows(data)
+        return output.getvalue() # DictWriter handle header differently inside, but here we simplify
+        
+    return output.getvalue()
 
+def convert_dict_list_to_csv(data, fieldnames):
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=fieldnames)
+    writer.writeheader()
+    writer.writerows(data)
+    return output.getvalue()
 
 # ============================
-# 7. MENU ADMIN
+# 4. HALAMAN LOGIN & REGISTER
+# ============================
+def halaman_login():
+    st.title("=== REKINDLE APP ===")
+    
+    tab1, tab2 = st.tabs(["Login", "Register"])
+
+    with tab1:
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        if st.button("Masuk"):
+            user = st.session_state.users_db.get(username)
+            if user is None:
+                st.error("Gagal: Username tidak ditemukan!")
+            elif user.password != password:
+                st.error("Gagal: Password salah!")
+            else:
+                st.session_state.login_status = True
+                st.session_state.current_user = user.username
+                st.session_state.current_role = user.role
+                st.success(f"Login berhasil! Halo, {user.username}")
+                st.rerun()
+
+    with tab2:
+        new_user = st.text_input("Username Baru")
+        new_pass = st.text_input("Password Baru", type="password")
+        if st.button("Daftar"):
+            if st.session_state.users_db.get(new_user) is not None:
+                st.error("Gagal: Username sudah terpakai!")
+            elif new_user and new_pass:
+                st.session_state.users_db[new_user] = User(new_user, new_pass, "pembeli")
+                st.success("Sukses: Akun berhasil dibuat! Silakan Login.")
+            else:
+                st.warning("Username dan Password tidak boleh kosong.")
+
+# ============================
+# 5. HALAMAN ADMIN
 # ============================
 def menu_admin():
-    while True:
-        print("\n--- ADMIN MENU ---")
-        print("1. Cek Stok Gudang")
-        print("2. Tambah Produk")
-        print("3. Edit Produk")
-        print("4. Kelola Role User")
-        print("5. Lihat Penjualan")
-        print("6. Update Status Pengiriman")
-        print("7. Cek Laporan Masalah")
-        print("8. Export Data ke CSV")
-        print("9. Import Data dari CSV")
-        print("0. Logout")
+    st.sidebar.title("Menu Admin")
+    menu = st.sidebar.radio("Pilih Menu:", 
+        ["Cek Stok", "Tambah Produk", "Edit Produk", "Kelola Role", 
+         "Lihat Penjualan", "Update Status", "Laporan Masalah", "Export/Import"])
+
+    if st.sidebar.button("Logout"):
+        st.session_state.login_status = False
+        st.session_state.current_user = None
+        st.rerun()
+
+    st.header(f"Admin Dashboard: {menu}")
+
+    # --- 1. CEK STOK ---
+    if menu == "Cek Stok":
+        data_tampil = []
+        for p in st.session_state.produk_list:
+            status = "Aman"
+            if p.get_stok() < 5: status = "!!! STOK MENIPIS !!!"
+            data_tampil.append({
+                "Nama": p.get_nama(),
+                "Harga": p.get_harga(),
+                "Stok": p.get_stok(),
+                "Status": status
+            })
+        st.table(data_tampil)
+
+    # --- 2. TAMBAH PRODUK ---
+    elif menu == "Tambah Produk":
+        nama = st.text_input("Nama Produk")
+        harga = st.number_input("Harga", min_value=0, step=1000)
+        stok = st.number_input("Stok Awal", min_value=0, step=1)
+        if st.button("Simpan Produk"):
+            st.session_state.produk_list.append(ProdukLilin(nama, int(harga), int(stok)))
+            st.success("Produk berhasil ditambahkan!")
+
+    # --- 3. EDIT PRODUK ---
+    elif menu == "Edit Produk":
+        nama_list = [p.get_nama() for p in st.session_state.produk_list]
+        pilih_nama = st.selectbox("Pilih Produk", nama_list)
         
-        pilih = input("Pilih: ")
-
-        if pilih == "1":
-            print("\n--- GUDANG ---")
-            for p in produk_list:
-                p.info()
-
-        elif pilih == "2":
-            nama = input("Nama: ")
-            harga_str = input("Harga: ")
-            stok_str = input("Stok: ")
-            if harga_str.isdigit() and stok_str.isdigit():
-                produk_list.append(ProdukLilin(nama, int(harga_str), int(stok_str)))
-                print("Disimpan.")
-            else:
-                print("Harga/Stok harus angka.")
-
-        elif pilih == "3":
-            print("\n--- EDIT DATA PRODUK ---")
-            nama_dicari = input("Masukkan nama produk yang mau diedit: ")
-            # Cari produknya dulu
-            produk_ditemukan = cari_produk(nama_dicari)
-            # Cek ketemu atau tidak
-            if produk_ditemukan is not None:
-                print("Produk ditemukan: " + produk_ditemukan.get_nama())
-                print("Mau ubah apa?")
-                print("1. Ubah Nama")
-                print("2. Ubah Harga")
-                print("3. Ubah Stok")
-                pilihan_edit = input("Pilih nomor (1-3): ")
-                # --- UBAH NAMA ---
-                if pilihan_edit == "1":
-                    nama_baru = input("Masukkan Nama Baru: ")
-                    produk_ditemukan.set_nama(nama_baru)
-                    print(">> Berhasil ubah nama!")
-                # --- UBAH HARGA ---
-                elif pilihan_edit == "2":
-                    input_harga = input("Masukkan Harga Baru: ")
-                    # Cek apakah inputnya angka
-                    if input_harga.isdigit():
-                        harga_angka = int(input_harga)
-                        produk_ditemukan.set_harga(harga_angka)
-                        print(">> Berhasil ubah harga!")
-                    else:
-                        print(">> Gagal: Harga harus berupa angka.")
-                # --- UBAH STOK ---
-                elif pilihan_edit == "3":
-                    input_stok = input("Masukkan Stok Baru: ")
-                    # Cek apakah inputnya angka
-                    if input_stok.isdigit():
-                        stok_angka = int(input_stok)
-                        produk_ditemukan.set_stok(stok_angka)
-                        print(">> Berhasil ubah stok!")
-                    else:
-                        print(">> Gagal: Stok harus berupa angka.")
-                else:
-                    print("Pilihan tidak valid.")
-            else:
-                print("Produk tidak ditemukan.")
-
-        elif pilih == "4":
-            print("\n--- DAFTAR PENGGUNA ---")
-            for username in users_db:
-                data_user = users_db[username]
-                print(f"- Username: {data_user.username} | Password: {data_user.password} | Role: {data_user.role}")
-            print("----------------------------------------")
-            target_username = input("Ketik username yang mau diedit: ")
-            if target_username in users_db:
-                print(f"\nUser '{target_username}' ditemukan.")
-                print("1. Ubah Status (Admin/Pembeli)")
-                print("2. Ubah Password")
-                print("3. Ubah Nama User (Rename)")
-                mau_ubah = input("Pilih nomor (1-3): ")
-                # --- GANTI ROLE ---
-                if mau_ubah == "1":
-                    role_baru = input("Status baru (admin/pembeli): ")
-                    users_db[target_username].role = role_baru
-                    print(">> Sip! Status berhasil diubah.")
-                # --- GANTI PASSWORD (BARU) ---
-                elif mau_ubah == "2":
-                    pass_baru = input("Password baru: ")
-                    users_db[target_username].password = pass_baru
-                    print(">> Sip! Password berhasil diubah.")
-                # --- GANTI USERNAME (BARU) ---
-                elif mau_ubah == "3":
-                    nama_baru = input("Username baru: ")
-                    # Cek dulu nama baru sudah dipakai orang lain belum?
-                    if nama_baru in users_db:
-                        print(">> Gagal: Nama itu sudah dipakai user lain!")
-                    else:
-                        # Logika Ganti Nama:
-                        # 1. Ambil data lama
-                        data_user = users_db[target_username]
-                        # 2. Ganti nama di dalam datanya
-                        data_user.username = nama_baru
-                        # 3. Pindah ke kunci (laci) baru
-                        users_db[nama_baru] = data_user
-                        # 4. Hapus kunci (laci) lama
-                        del users_db[target_username]
-                        print(f">> Sip! Berubah jadi {nama_baru}")
-            else: 
-                print(">> User tidak ada.")
-
-        elif pilih == "5":
-            print("\n--- RIWAYAT PENJUALAN ---")
-            total_pendapatan = 0
-            cari_nama = input("Cari nama pembeli (Kosongkan utk lihat semua): ").lower()
-            for transaksi in riwayat_transaksi:
-                nama_pembeli = transaksi['pembeli']
-                # Cek apakah nama yang dicari ada di nama pembeli?
-                if cari_nama in nama_pembeli.lower():
-                    barang = transaksi['barang']
-                    total  = transaksi['total']
-                    status = transaksi['status']
-                    print(nama_pembeli + " | Beli: " + barang + " | Rp " + str(total) + " | Status: " + status)
-                    # Hitung total uang
-                    total_pendapatan = total_pendapatan + total
-            print("----------------------------------------")
-            print("TOTAL UANG MASUK: Rp " + str(total_pendapatan))
+        produk_ditemukan = cari_produk(pilih_nama)
+        if produk_ditemukan:
+            st.write(f"Edit Data: **{produk_ditemukan.get_nama()}**")
             
-        elif pilih == "6":
-            print("\n--- UPDATE STATUS PESANAN ---")
-            nomor = 1
-            for transaksi in riwayat_transaksi:
-                print(str(nomor) + ". " + transaksi['pembeli'] + " - " + transaksi['barang'] + " [" + transaksi['status'] + "]")
-                nomor = nomor + 1
-            input_nomor = input("Pilih nomor transaksi yang mau diupdate: ")
-            # Cek apakah inputnya angka?
-            if input_nomor.isdigit():
-                index = int(input_nomor) - 1
-                # Cek apakah nomornya valid (ada di dalam list)?
-                if index >= 0 and index < len(riwayat_transaksi):
-                    print("Pilih Status Baru:")
-                    print("1. Diproses")
-                    print("2. Sedang Dikirim")
-                    print("3. Selesai / Sampai")
-                    pilihan_status = input("Masukkan nomor status (1-3): ")
-                    # Logika if-else sederhana untuk ganti status
-                    if pilihan_status == "1":
-                        riwayat_transaksi[index]['status'] = "Diproses"
-                        print(">> Status diubah jadi: Diproses")
-                    elif pilihan_status == "2":
-                        riwayat_transaksi[index]['status'] = "Sedang Dikirim"
-                        print(">> Status diubah jadi: Sedang Dikirim")
-                    elif pilihan_status == "3":
-                        riwayat_transaksi[index]['status'] = "Selesai"
-                        print(">> Status diubah jadi: Selesai")
-                    else:
-                        print(">> Pilihan status tidak ada.")
-                else:
-                    print(">> Nomor transaksi tidak ditemukan.")
-            else:
-                print(">> Input harus angka.")
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                baru_nama = st.text_input("Ubah Nama", value=produk_ditemukan.get_nama())
+            with col2:
+                baru_harga = st.number_input("Ubah Harga", value=produk_ditemukan.get_harga())
+            with col3:
+                baru_stok = st.number_input("Ubah Stok", value=produk_ditemukan.get_stok())
             
-        elif pilih == "7":
-            print("\n--- INBOX LAPORAN USER ---")
-            if len(inbox_laporan) == 0:
-                print("Tidak ada pesan masuk.")
-            else:
-                nomor = 1
-                for pesan in inbox_laporan:
-                    print(str(nomor) + ". Dari: " + pesan['pengirim'])
-                    print("   Keluhan: " + pesan['pesan'])
-                    print("   Balasan: " + pesan['jawaban'])
-                    print("----------------------------------------")
-                    nomor = nomor + 1
-                input_nomor = input("Nomor pesan yang mau dibalas (0 batal): ")
-                if input_nomor.isdigit():
-                    index = int(input_nomor) - 1
-                    # Cek validitas nomor pesan
-                    if index >= 0 and index < len(inbox_laporan):
-                        balasan_admin = input("Tulis balasan Anda: ")
-                        # Update dictionary laporan
-                        inbox_laporan[index]['jawaban'] = balasan_admin
-                        print(">> Balasan terkirim!")
-                    elif index == -1:
-                        print(">> Batal membalas.")
-                    else:
-                        print(">> Nomor pesan tidak valid.")
-                else:
-                    print(">> Input harus angka.")
-        elif pilih == "8":
-            export_data()
+            if st.button("Update Produk"):
+                produk_ditemukan.set_nama(baru_nama)
+                produk_ditemukan.set_harga(int(baru_harga))
+                produk_ditemukan.set_stok(int(baru_stok))
+                st.success("Data produk berhasil diupdate!")
+
+    # --- 4. KELOLA ROLE USER ---
+    elif menu == "Kelola Role":
+        list_users = list(st.session_state.users_db.keys())
+        target_username = st.selectbox("Pilih User", list_users)
         
-        elif pilih == "9":
-            import_data()
+        user_obj = st.session_state.users_db[target_username]
+        st.write(f"Role saat ini: **{user_obj.role}** | Password: **{user_obj.password}**")
+
+        opsi_edit = st.selectbox("Mau edit apa?", ["Role", "Password", "Rename User"])
+        
+        if opsi_edit == "Role":
+            role_baru = st.selectbox("Pilih Role Baru", ["admin", "pembeli"])
+            if st.button("Simpan Role"):
+                user_obj.role = role_baru
+                st.success("Role berubah.")
+        
+        elif opsi_edit == "Password":
+            pass_baru = st.text_input("Password Baru")
+            if st.button("Simpan Password"):
+                user_obj.password = pass_baru
+                st.success("Password berubah.")
+
+        elif opsi_edit == "Rename User":
+            nama_baru = st.text_input("Username Baru")
+            if st.button("Ganti Username"):
+                if nama_baru in st.session_state.users_db:
+                    st.error("Nama sudah dipakai!")
+                else:
+                    user_obj.username = nama_baru
+                    st.session_state.users_db[nama_baru] = user_obj
+                    del st.session_state.users_db[target_username]
+                    st.success(f"Berubah menjadi {nama_baru}")
+                    st.rerun()
+
+    # --- 5. LIHAT PENJUALAN ---
+    elif menu == "Lihat Penjualan":
+        search = st.text_input("Cari Nama Pembeli (Opsional)")
+        total_pendapatan = 0
+        data_sales = []
+        
+        for t in st.session_state.riwayat_transaksi:
+            if search.lower() in t['pembeli'].lower():
+                data_sales.append(t)
+                total_pendapatan += t['total']
+        
+        if data_sales:
+            st.dataframe(data_sales)
+            st.info(f"TOTAL PENDAPATAN (Tampil): Rp {total_pendapatan}")
+        else:
+            st.warning("Belum ada data penjualan.")
+
+    # --- 6. UPDATE STATUS ---
+    elif menu == "Update Status":
+        if not st.session_state.riwayat_transaksi:
+            st.write("Tidak ada transaksi.")
+        else:
+            # Buat list string untuk selectbox
+            options = []
+            for i, t in enumerate(st.session_state.riwayat_transaksi):
+                options.append(f"{i+1}. {t['pembeli']} - {t['barang']} [{t['status']}]")
             
-        elif pilih == "0":
-            break
+            pilihan = st.selectbox("Pilih Transaksi", options)
+            index = int(pilihan.split(".")[0]) - 1
+            
+            new_status = st.selectbox("Set Status Baru", ["Diproses", "Sedang Dikirim", "Selesai"])
+            if st.button("Update Status"):
+                st.session_state.riwayat_transaksi[index]['status'] = new_status
+                st.success(f"Status diubah jadi {new_status}")
+                st.rerun()
+
+    # --- 7. LAPORAN MASALAH ---
+    elif menu == "Laporan Masalah":
+        if not st.session_state.inbox_laporan:
+            st.write("Inbox Kosong.")
+        else:
+            for i, msg in enumerate(st.session_state.inbox_laporan):
+                with st.expander(f"Pesan dari {msg['pengirim']} (Status: {msg['jawaban']})"):
+                    st.write(f"**Keluhan:** {msg['pesan']}")
+                    balasan = st.text_input(f"Jawab pesan #{i+1}", key=f"ans_{i}")
+                    if st.button(f"Kirim Balasan #{i+1}", key=f"btn_{i}"):
+                        st.session_state.inbox_laporan[i]['jawaban'] = balasan
+                        st.success("Balasan terkirim.")
+                        st.rerun()
+
+    # --- 8. EXPORT / IMPORT ---
+    elif menu == "Export/Import":
+        st.subheader("Export Data (Download CSV)")
+        
+        # 1. Export User
+        csv_users = convert_to_csv(st.session_state.users_db, ['Username', 'Password', 'Role'], 'user')
+        st.download_button("Download Data User", csv_users, "data_users.csv", "text/csv")
+        
+        # 2. Export Produk
+        csv_produk = convert_to_csv(st.session_state.produk_list, ['Nama Produk', 'Harga', 'Stok'], 'produk')
+        st.download_button("Download Data Produk", csv_produk, "data_produk.csv", "text/csv")
+
+        # 3. Export Penjualan
+        if st.session_state.riwayat_transaksi:
+            csv_sales = convert_dict_list_to_csv(st.session_state.riwayat_transaksi, ['pembeli', 'barang', 'qty', 'total', 'status'])
+            st.download_button("Download Data Penjualan", csv_sales, "data_penjualan.csv", "text/csv")
+
+        st.divider()
+        st.subheader("Import Data (Upload CSV)")
+        uploaded_file = st.file_uploader("Upload File CSV (Contoh: data_produk.csv)")
+        
+        if uploaded_file is not None:
+            tipe_import = st.selectbox("Ini file apa?", ["User", "Produk", "Penjualan"])
+            if st.button("Proses Import"):
+                stringio = io.StringIO(uploaded_file.getvalue().decode("utf-8"))
+                
+                if tipe_import == "User":
+                    reader = csv.reader(stringio)
+                    next(reader) # skip header
+                    st.session_state.users_db.clear()
+                    for row in reader:
+                        st.session_state.users_db[row[0]] = User(row[0], row[1], row[2])
+                    st.success("Import User Sukses!")
+
+                elif tipe_import == "Produk":
+                    reader = csv.reader(stringio)
+                    next(reader)
+                    st.session_state.produk_list.clear()
+                    for row in reader:
+                        st.session_state.produk_list.append(ProdukLilin(row[0], int(row[1]), int(row[2])))
+                    st.success("Import Produk Sukses!")
+                
+                elif tipe_import == "Penjualan":
+                    reader = csv.DictReader(stringio)
+                    st.session_state.riwayat_transaksi.clear()
+                    for row in reader:
+                        row['qty'] = int(row['qty'])
+                        row['total'] = int(row['total'])
+                        st.session_state.riwayat_transaksi.append(row)
+                    st.success("Import Penjualan Sukses!")
 
 
 # ============================
-# 8. MENU PEMBELI
+# 6. HALAMAN PEMBELI
 # ============================
-def menu_pembeli(user_login):
-    while True:
-        print("\n--- PEMBELI (" + user_login + ") ---")
-        print("1. Belanja")
-        print("2. Keranjang & Bayar")
-        print("3. Cek Pesanan")
-        print("4. Lapor Masalah")
-        print("0. Logout")
+def menu_pembeli():
+    user_login = st.session_state.current_user
+    st.sidebar.title(f"Halo, {user_login}")
+    menu = st.sidebar.radio("Menu Pembeli:", ["Belanja", "Keranjang & Bayar", "Pesanan Saya", "Pusat Bantuan"])
+    
+    if st.sidebar.button("Logout"):
+        # Reset keranjang saat logout (opsional, tapi bagus utk UX)
+        st.session_state.keranjang = [] 
+        st.session_state.login_status = False
+        st.rerun()
 
-        pilih = input("Pilih: ")
+    # --- 1. BELANJA ---
+    if menu == "Belanja":
+        st.header("Katalog Produk")
+        
+        # Tampilan Grid Sederhana
+        cols = st.columns(2)
+        for i, produk in enumerate(st.session_state.produk_list):
+            with cols[i % 2]:
+                st.write("---")
+                st.subheader(produk.get_nama())
+                st.write(f"Harga: Rp {produk.get_harga()}")
+                st.write(f"Sisa Stok: {produk.get_stok()}")
+                
+                with st.form(key=f"beli_{i}"):
+                    qty = st.number_input("Jumlah", min_value=1, max_value=produk.get_stok() if produk.get_stok() > 0 else 1, key=f"q_{i}")
+                    add_btn = st.form_submit_button("Masuk Keranjang")
+                    
+                    if add_btn:
+                        if produk.get_stok() < qty:
+                            st.error("Stok tidak cukup!")
+                        else:
+                            item_belanja = {
+                                "obj_produk": produk, # Reference object
+                                "nama": produk.get_nama(),
+                                "harga": produk.get_harga(),
+                                "qty": int(qty)
+                            }
+                            st.session_state.keranjang.append(item_belanja)
+                            st.success(f"Masuk keranjang: {produk.get_nama()} (x{qty})")
 
-        if pilih == "1":
-            print("\n--- KATALOG PRODUK ---")
-            for produk in produk_list:
-                produk.info()
-            nama_dicari = input("Masukkan Nama Produk yang mau dibeli (0 batal): ")
-            # Cek apakah user mau batal?
-            if nama_dicari == '0':
-                continue # Kembali ke menu awal
-            # Cari produknya
-            produk_ditemukan = cari_produk(nama_dicari)
-            if produk_ditemukan:
-                input_jumlah = input("Mau beli berapa? ")
-                # Cek apakah inputnya angka
-                if input_jumlah.isdigit():
-                    jumlah_beli = int(input_jumlah)
-                    stok_tersedia = produk_ditemukan.get_stok()
-                    # Cek stok cukup atau tidak
-                    if jumlah_beli <= stok_tersedia:
-                        # Buat data item belanja (Dictionary)
-                        item_belanja = {
-                            "obj_produk": produk_ditemukan,
-                            "nama": produk_ditemukan.get_nama(),
-                            "harga": produk_ditemukan.get_harga(),
-                            "qty": jumlah_beli
-                        }
-                        # Masukkan ke list keranjang
-                        keranjang.append(item_belanja)
-                        print(">> Berhasil masuk keranjang!")
-                    else:
-                        print(">> Stok tidak cukup (Sisa: " + str(stok_tersedia) + ")")
-                else:
-                    print(">> Jumlah harus berupa angka.")
+    # --- 2. KERANJANG & BAYAR ---
+    elif menu == "Keranjang & Bayar":
+        st.header("Keranjang Belanja")
+        if not st.session_state.keranjang:
+            st.info("Keranjang Anda kosong.")
+        else:
+            total_belanja = 0
+            total_qty = 0
+            
+            # Tampilkan list
+            for item in st.session_state.keranjang:
+                subtotal = item['harga'] * item['qty']
+                st.write(f"- **{item['nama']}** (x{item['qty']}) = Rp {subtotal}")
+                total_belanja += subtotal
+                total_qty += item['qty']
+            
+            st.divider()
+            
+            # Logika Diskon (Sama persis dengan source asli)
+            persen_diskon = 0
+            if total_qty >= 5:
+                persen_diskon = 20
+            elif total_qty >= 3:
+                persen_diskon = 10
+            
+            potongan_harga = total_belanja * (persen_diskon / 100)
+            total_akhir = total_belanja - potongan_harga
+            
+            st.write(f"Total Awal: Rp {int(total_belanja)}")
+            if persen_diskon > 0:
+                st.success(f"DISKON {persen_diskon}%: -Rp {int(potongan_harga)}")
             else:
-                print(">> Produk tidak ditemukan.")
-
-        elif pilih == "2":
-            # Cek dulu: Keranjangnya ada isinya gak?
-            if len(keranjang) == 0:
-                print(">> Keranjang belanja masih kosong.")
-                continue 
-            print("\n--- KASIR REKINDLE ---")
-            total_bayar = 0
-            # TAHAP 1: Tampilkan rincian belanjaan
-            for item in keranjang:
-                nama_barang = item['nama']
-                jumlah_beli = item['qty']
-                harga_satuan = item['harga']
-                # Hitung harga per barang
-                subtotal = harga_satuan * jumlah_beli
-                # Tampilkan ke layar
-                print("- " + nama_barang + " (x" + str(jumlah_beli) + ") = Rp " + str(subtotal))
-                # Tambahkan ke total keseluruhan
-                total_bayar = total_bayar + subtotal
-            print("------------------------------")
-            print("TOTAL HARUS DIBAYAR: Rp " + str(total_bayar))
-            # TAHAP 2: Konfirmasi Pembayaran
-            jawaban = input("Bayar sekarang? (ketik 'ya' atau 'tidak'): ")
-            if jawaban == "ya":
-                # Proses barang satu per satu
-                for item in keranjang:
-                    # 1. Kurangi Stok Fisik di Gudang
-                    produk_asli = item['obj_produk']
-                    produk_asli.kurangi_stok(item['qty'])
-                    # 2. Catat ke Buku Riwayat Penjualan
-                    catatan_baru = {
+                st.write("DISKON: - (Beli min 3 items dapat diskon!)")
+            
+            st.subheader(f"TOTAL BAYAR: Rp {int(total_akhir)}")
+            
+            if st.button("Bayar Sekarang"):
+                # Proses kurangi stok dan catat history
+                for item in st.session_state.keranjang:
+                    # Method kurangi stok dari Class
+                    item['obj_produk'].kurangi_stok(item['qty'])
+                    
+                    st.session_state.riwayat_transaksi.append({
                         "pembeli": user_login,
                         "barang": item['nama'],
                         "qty": item['qty'],
                         "total": item['harga'] * item['qty'],
                         "status": "Diproses"
-                    }
-                    riwayat_transaksi.append(catatan_baru)
-                print(">> Pembayaran LUNAS! Terima kasih.")
-                # Kosongkan keranjang karena sudah dibayar
-                # Kita pakai cara paling standar: hapus sampai habis
-                keranjang.clear()
-            else:
-                print(">> Pembayaran dibatalkan.")
+                    })
+                
+                st.session_state.keranjang.clear()
+                st.balloons()
+                st.success("Pembayaran LUNAS! Terima kasih.")
 
-        elif pilih == "3":
-            print("\n--- RIWAYAT PESANAN SAYA ---")
-            ada_pesanan = False
-            for transaksi in riwayat_transaksi:
-                # Cek apakah ini pesanan milik user yang sedang login?
-                if transaksi['pembeli'] == user_login:
-                    # Ambil data dari riwayat
-                    barang = transaksi['barang']
-                    jumlah = transaksi['qty']
-                    total_harga = transaksi['total']
-                    status = transaksi['status']
-                    # Tampilkan: Nama (xJunlah) | Total | Status
-                    print(f"- {barang} (x{jumlah}) | Total: Rp {total_harga} | Status: [{status}]")
-                    ada_pesanan = True
-            if ada_pesanan == False:
-                print(">> Belum ada pesanan.")
+    # --- 3. PESANAN SAYA ---
+    elif menu == "Pesanan Saya":
+        st.header("Riwayat Pesanan")
+        found = False
+        for t in st.session_state.riwayat_transaksi:
+            if t['pembeli'] == user_login:
+                st.info(f"{t['barang']} (x{t['qty']}) | Total: Rp {t['total']} | Status: [{t['status']}]")
+                found = True
+        if not found:
+            st.write("Belum ada riwayat pesanan.")
 
-        elif pilih == "4":
-            print("\n--- KIRIM LAPORAN ---")
-            keluhan_user = input("Tuliskan keluhan Anda: ")
-            # Buat pesan baru (Dictionary)
-            pesan_baru = {
-                "pengirim": user_login,
-                "pesan": keluhan_user,
-                "jawaban": "Belum dibalas"
-            }
-            inbox_laporan.append(pesan_baru)
-            print(">> Laporan berhasil dikirim ke Admin.")
-        elif pilih == "0":
-            break
+    # --- 4. PUSAT BANTUAN ---
+    elif menu == "Pusat Bantuan":
+        st.header("Lapor Masalah")
+        
+        tab_tulis, tab_riwayat = st.tabs(["Tulis Laporan", "Lihat Balasan"])
+        
+        with tab_tulis:
+            pesan_user = st.text_area("Tulis keluhan Anda:")
+            if st.button("Kirim Laporan"):
+                st.session_state.inbox_laporan.append({
+                    "pengirim": user_login,
+                    "pesan": pesan_user,
+                    "jawaban": "Belum dibalas"
+                })
+                st.success("Laporan terkirim ke Admin.")
+        
+        with tab_riwayat:
+            found = False
+            for chat in st.session_state.inbox_laporan:
+                if chat['pengirim'] == user_login:
+                    st.write(f"**Q (Anda):** {chat['pesan']}")
+                    st.write(f"**A (Admin):** {chat['jawaban']}")
+                    st.write("---")
+                    found = True
+            if not found:
+                st.write("Belum ada riwayat.")
 
 
 # ============================
-# 9. PROGRAM UTAMA
+# 7. MAIN LOGIC (ROUTING)
 # ============================
 if __name__ == "__main__":
-    while True:
-        print("\n=== REKINDLE APP ===")
-        print("1. Login | 2. Register | 3. Exit")
-        p = input("Pilih: ")
-        
-        if p == "1":
-            role,user = login()
-            if role == "admin": 
-                menu_admin()
-            elif role == "pembeli": 
-                menu_pembeli(user)
-        elif p == "2":
-            register()
-        elif p == "3":
-            break
+    if not st.session_state.login_status:
+        halaman_login()
+    else:
+        role = st.session_state.current_role
+        if role == "admin":
+            menu_admin()
+        else:
+            menu_pembeli()
