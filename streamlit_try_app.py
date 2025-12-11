@@ -21,6 +21,7 @@ st.markdown("""
 
     html, body, [class*="css"] {
         font-family: 'Poppins', sans-serif;
+        color: #333333; /* Memaksa warna font utama jadi gelap */
     }
 
     /* BACKGROUND UTAMA CREAM */
@@ -28,128 +29,155 @@ st.markdown("""
         background-color: #FAF9F6;
     }
 
-    /* --- PERBAIKAN 1: INPUT FIELD & PLACEHOLDER --- */
-    /* Warna teks saat mengetik */
-    .stTextInput input {
-        color: #333333 !important; 
-    }
-    /* Warna placeholder (teks samar "Masukkan username...") */
-    .stTextInput input::placeholder {
-        color: #666666 !important;
-        opacity: 1;
-    }
-    /* Kotak Input */
-    .stTextInput > div > div {
-        background-color: #FFFFFF;
-        border: 1px solid #D1D1D1;
-        border-radius: 12px;
-        color: #333333;
+    /* =========================================
+       1. PERBAIKAN KOLOM INPUT (FORM LOGIN)
+       Agar presisi, putih bersih, tulisan terbaca
+       ========================================= */
+    
+    /* Reset Container */
+    [data-testid="stTextInput"] {
+        margin-bottom: 15px; /* Jarak antar kolom */
     }
     
-    /* --- PERBAIKAN 2: WARNA TAB (LOGIN/DAFTAR) --- */
-    /* Warna teks tab yang tidak aktif */
-    button[data-baseweb="tab"] {
-        color: #666666 !important; 
+    /* Kotak Input (Wrapper) - Memaksa background Putih & Border Rapi */
+    [data-testid="stTextInput"] > div > div {
+        background-color: #FFFFFF !important;
+        color: #333333 !important;
+        border: 1px solid #E0E0E0 !important; /* Border abu lembut */
+        border-radius: 12px !important;
+        box-shadow: none !important;
+    }
+
+    /* Efek saat diklik (Focus) - Ubah highlight merah jadi Hitam */
+    [data-testid="stTextInput"] > div > div:focus-within {
+        border-color: #333333 !important;
+        box-shadow: 0 0 0 1px #333333 !important;
+    }
+
+    /* Warna Teks yang diketik user (PENTING: Agar tidak putih) */
+    [data-testid="stTextInput"] input {
+        color: #333333 !important;
+        -webkit-text-fill-color: #333333 !important;
+        caret-color: #333333;
+    }
+
+    /* Warna Placeholder ("Masukkan username...") */
+    [data-testid="stTextInput"] input::placeholder {
+        color: #999999 !important;
+        opacity: 1;
+    }
+
+    /* Sembunyikan Label default Streamlit (Username/Password di atas kotak) */
+    [data-testid="stTextInput"] label {
+        display: none;
+    }
+
+    /* =========================================
+       2. PERBAIKAN TABS (LOGIN / DAFTAR)
+       ========================================= */
+    /* Tab Tidak Aktif */
+    button[data-baseweb="tab"] > div {
+        color: #999999 !important;
         font-weight: 400;
     }
-    /* Warna teks tab yang sedang dipilih (Aktif) */
-    button[data-baseweb="tab"][aria-selected="true"] {
-        color: #000000 !important; 
+    /* Tab Aktif (Saat dipilih) */
+    button[data-baseweb="tab"][aria-selected="true"] > div {
+        color: #000000 !important;
         font-weight: 700;
+    }
+    /* Garis bawah tab aktif */
+    button[data-baseweb="tab"][aria-selected="true"] {
         border-bottom-color: #000000 !important;
     }
 
-    /* TOMBOL STYLING (Hitam Elegan) */
+    /* =========================================
+       3. TOMBOL & HEADER
+       ========================================= */
     .stButton > button {
-        background-color: #2C2C2C !important;
+        background-color: #1A1A1A !important; /* Hitam Pekat */
         color: #FFFFFF !important;
         border-radius: 30px;
         padding: 0.6rem 2rem;
         font-weight: 600;
         width: 100%;
         border: none;
-        transition: transform 0.2s;
+        transition: all 0.2s;
     }
     .stButton > button:hover {
         transform: scale(1.02);
         background-color: #000000 !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
 
-    /* HEADER TEXT KIRI */
+    /* Header Kiri */
     .hero-title {
         font-size: 3rem;
         font-weight: 700;
-        color: #1A1A1A; /* Hitam pekat */
+        color: #1A1A1A;
         margin-bottom: 0.5rem;
     }
     .hero-subtitle {
-        font-size: 1rem;
-        color: #555555; /* Abu tua */
+        font-size: 1.1rem;
+        color: #666666;
         margin-bottom: 2rem;
         font-weight: 300;
     }
 
-    /* CONTAINER GAMBAR KANAN */
+    /* =========================================
+       4. CONTAINER GAMBAR KANAN (GLASS CARD)
+       ========================================= */
     .right-image-container {
         position: relative;
         width: 100%;
         height: 90vh;
         border-radius: 20px;
         overflow: hidden;
-        /* Gambar background estetik */
         background-image: url('https://images.unsplash.com/photo-1602523961358-f9f03dd557db?q=80&w=1000&auto=format&fit=crop'); 
         background-size: cover;
         background-position: center;
     }
 
-    /* --- PERBAIKAN 3: TEKS PADA GLASS CARD (KANAN) --- */
     .glass-card {
         position: absolute;
         top: 50%;
-        right: -50px;
+        right: -40px;
         transform: translateY(-50%);
-        width: 80%;
-        /* Background kartu dibuat lebih putih susu agar teks gelap terbaca */
-        background: rgba(255, 255, 255, 0.65); 
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
+        width: 85%;
+        /* Background putih susu transparan agar teks hitam terbaca */
+        background: rgba(255, 255, 255, 0.75); 
+        backdrop-filter: blur(25px);
+        -webkit-backdrop-filter: blur(25px);
         padding: 40px;
-        border-radius: 20px;
+        border-radius: 24px;
         border: 1px solid rgba(255, 255, 255, 0.8);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+        box-shadow: 0 10px 40px rgba(0,0,0,0.05);
     }
     
     .glass-text-title {
         font-size: 1.8rem;
         font-weight: 700;
         margin-bottom: 15px;
-        color: #1A1A1A; /* UBAH KE HITAM/GELAP */
+        color: #1A1A1A !important;
         line-height: 1.2;
     }
     .glass-text-body {
         font-size: 1rem;
         line-height: 1.6;
-        color: #333333; /* UBAH KE ABU TUA */
+        color: #333333 !important;
         font-weight: 400;
     }
-
+    
+    /* Padding Atas Halaman */
     .block-container {
         padding-top: 2rem;
         padding-bottom: 0rem;
         max-width: 100%;
     }
-    /* ... (kode css sebelumnya) ... */
-
-    /* --- PERBAIKAN 4: UBAH BENTUK GAMBAR KATALOG JADI ARCH (KUBAH) --- */
-    /* Target khusus gambar di dalam kolom katalog */
+    
+    /* Gambar Katalog (Opsional - Style Lengkung) */
     div[data-testid="stImage"] img {
-        border-radius: 100px 100px 0 0 !important; /* Membuat lengkungan kubah di atas */
-        aspect-ratio: 3 / 4 !important;            /* Memaksa gambar jadi agak tinggi (portrait) */
-        object-fit: cover !important;              /* Memastikan gambar penuh & tidak gepeng */
-        width: 100% !important;
-        margin-bottom: 10px;
+        border-radius: 15px;
     }
-</style>
 </style>
 """, unsafe_allow_html=True)
 
