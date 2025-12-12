@@ -29,6 +29,19 @@ st.markdown("""
         background-color: #FAF9F6;
     }
 
+/* PERBAIKAN KHUSUS UNTUK TABEL (ADMIN) AGAR TIDAK INVISIBLE */
+    div[data-testid="stTable"], 
+    div[data-testid="stDataFrame"] {
+        color: #333333 !important;
+    }
+    div[data-testid="stTable"] th, 
+    div[data-testid="stTable"] td,
+    div[data-testid="stDataFrame"] th, 
+    div[data-testid="stDataFrame"] td {
+        color: #333333 !important;
+        background-color: transparent !important;
+        border-bottom: 1px solid #cccccc !important;
+        
     /* INPUT STYLING */
     [data-testid="stTextInput"] { margin-bottom: 15px; }
     [data-testid="stTextInput"] > div > div {
@@ -569,6 +582,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
