@@ -29,6 +29,15 @@ st.markdown("""
         background-color: #FAF9F6;
     }
 
+/* Memaksa Judul Besar (seperti 'Gudang', 'Tambah Produk') jadi Hitam */
+    h1, h2, h3, h4, h5, h6 {
+        color: #000000 !important;
+    }
+
+    /* Memaksa teks biasa dan label widget jadi Hitam/Abu Gelap */
+    p, .stMarkdown, label, div[data-testid="stWidgetLabel"] {
+        color: #333333 !important;
+    }
         
     /* INPUT STYLING */
     [data-testid="stTextInput"] { margin-bottom: 15px; }
@@ -597,6 +606,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
