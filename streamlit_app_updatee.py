@@ -555,15 +555,32 @@ def menu_pembeli(user):
             with col_kanan:
                 subtotal = sum(item['harga'] * item['qty'] for item in cart)
                 total_qty = sum(item['qty'] for item in cart)
-                diskon = 0.1 if total_qty >= 3 else 0
+                
+                # --- LOGIKA DISKON BERTINGKAT ---
+                # Prioritaskan diskon terbesar dulu (Logic: > 5 dulu, baru >= 3)
+                if total_qty > 5:
+                    diskon = 0.20 # 20%
+                    label_diskon = "20%"
+                elif total_qty >= 3: # Menggunakan >= agar beli pas 3 juga dapet
+                    diskon = 0.10 # 10%
+                    label_diskon = "10%"
+                else:
+                    diskon = 0
+                    label_diskon = "0%"
+                
                 potongan = subtotal * diskon
                 
                 st.markdown("""<div style="background:#F3F3F3; padding:20px; border-radius:10px;"><h4 style="color:#000; margin-top:0;">Cart Totals</h4><hr></div>""", unsafe_allow_html=True)
                 st.markdown(f"<div style='color:#000;'>Subtotal: Rp {subtotal:,}</div>", unsafe_allow_html=True)
-                if diskon > 0: st.success(f"Diskon 10%: -Rp {int(potongan):,}")
+                
+                # Tampilkan tulisan diskon hanya jika dapat diskon
+                if diskon > 0: 
+                    st.success(f"Diskon {label_diskon}: -Rp {int(potongan):,}")
+                
                 st.markdown(f"<div style='color:#000; font-weight:bold; font-size:1.2em; margin-top:10px;'>Total: Rp {int(subtotal-potongan):,}</div>", unsafe_allow_html=True)
                 
                 if st.button("Checkout Sekarang"):
+                    # ... (lanjutkan kodingan checkout seperti sebelumnya) ...
                     for item in cart:
                         item['obj_produk'].kurangi_stok(item['qty'])
                         st.session_state['riwayat_transaksi'].append({
@@ -649,6 +666,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
