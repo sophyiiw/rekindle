@@ -6,10 +6,10 @@ import io
 # 1. KONFIGURASI HALAMAN
 # ============================
 st.set_page_config(
-    page_title="Rekindle Candle Shop",
-    page_icon="🕯️",
-    layout="wide",
-    initial_sidebar_state="collapsed"
+    page_title="Rekindle Candle Shop",     
+    page_icon="🕯️",
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
 # ============================
@@ -455,3 +455,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
