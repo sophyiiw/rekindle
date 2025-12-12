@@ -53,8 +53,32 @@ st.markdown("""
     }
 
     /* C. TOMBOL (BUTTON): WAJIB PUTIH */
-    /* Ini melindungi teks di dalam tombol agar tidak ikut jadi hitam */
-    button p, button div, .stButton button {
+    /* 1. Paksa Container Tombol Background Hitam */
+    .stButton button, 
+    div[data-testid="stForm"] button {
+        background-color: #1A1A1A !important;
+        border: none !important;
+        color: #FFFFFF !important; /* Cadangan warna putih */
+    }
+
+    /* 2. INI KUNCINYA: Paksa elemen Teks <p> di DALAM tombol jadi PUTIH */
+    /* Kita gunakan selector yang sangat spesifik agar menang lawan Aturan A */
+    .stButton button p,
+    div[data-testid="stForm"] button p,
+    .block-container .stButton button p {
+        color: #FFFFFF !important;
+    }
+
+    /* 3. Efek Hover (Saat Mouse Masuk) */
+    .stButton button:hover,
+    div[data-testid="stForm"] button:hover {
+        background-color: #000000 !important;
+        transform: scale(1.02);
+    }
+    
+    /* Pastikan teks tetap putih saat di-hover */
+    .stButton button:hover p,
+    div[data-testid="stForm"] button:hover p {
         color: #FFFFFF !important;
     }
         
@@ -625,6 +649,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
