@@ -29,42 +29,25 @@ st.markdown("""
         background-color: #FAF9F6;
     }
 
-    /*  A. ATURAN UTAMA: TEKS KONTEN JADI HITAM               
-   
-    
-    /* Kita batasi hanya elemen di dalam container ".main" agar lebih aman */
-    .main h1, .main h2, .main h3, .main h4, .main h5, .main h6, 
-    .main p, .main li, .main .stMarkdown, .main label {
+    /* A. SIDEBAR (KIRI): SEMUA TEKS WAJIB PUTIH */
+    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3,
+    [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] div {
+        color: #FFFFFF !important;
+    }
+
+    /* B. KONTEN UTAMA (KANAN): JUDUL & PARAGRAF WAJIB HITAM (Supaya kebaca di Cream) */
+    .main h1, .main h2, .main h3, .main h4, 
+    .main p, .main li, .main label, .main .stMarkdown {
         color: #000000 !important;
     }
 
-    
-    /*  PENGECUALIAN: SIDEBAR (MENU KIRI) TETAP PUTIH       
-    
-    
-    [data-testid="stSidebar"] h1,
-    [data-testid="stSidebar"] h2,
-    [data-testid="stSidebar"] h3,
-    [data-testid="stSidebar"] p,
-    [data-testid="stSidebar"] span,
-    [data-testid="stSidebar"] div,
-    [data-testid="stSidebar"] label,
-    [data-testid="stSidebar"] li {
-        color: #FFFFFF !important;
-    }
-
-   
-    /*  FIX TOMBOL (LOGIN, DAFTAR, BELI) AGAR TIDAK HITAM   
-    /* Memaksa teks di dalam tombol apapun menjadi PUTIH kembali */
-    .stButton button, 
-    .stButton button p,
-    div[data-testid="stForm"] button,
-    div[data-testid="stForm"] button p {
-        color: #FFFFFF !important;
-    }
-    
-    /* Efek Hover pada tombol (opsional, biar teks tetap putih saat disorot) */
-    .stButton button:hover p {
+    /* C. TOMBOL (PENYELAMAT): TEKS DI DALAM TOMBOL WAJIB PUTIH KEMBALI */
+    /* Ini akan menimpa aturan B khusus untuk teks di dalam tombol */
+    button p, 
+    div[role="button"] p, 
+    [data-testid="stBaseButton-secondary"] p,
+    [data-testid="stBaseButton-primary"] p {
         color: #FFFFFF !important;
     }
         
@@ -635,6 +618,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
