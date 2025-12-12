@@ -28,6 +28,25 @@ st.markdown("""
     .stApp {
         background-color: #FAF9F6;
     }
+    
+   /* PERBAIKAN WARNA TABEL AGAR TIDAK PUTIH (INVISIBLE) */
+    div[data-testid="stTable"], 
+    div[data-testid="stDataFrame"] {
+        color: #333333 !important;
+    }
+    
+/* INPUT STYLING */
+    [data-testid="stTextInput"] { margin-bottom: 15px; }
+    [data-testid="stTextInput"] > div > div {
+        background-color: #FFFFFF !important;
+    div[data-testid="stTable"] th, 
+    div[data-testid="stTable"] td,
+    div[data-testid="stDataFrame"] th, 
+    div[data-testid="stDataFrame"] td {
+        color: #333333 !important;
+        background-color: transparent !important;
+        border-bottom: 1px solid #cccccc !important;
+    }
 
     /* INPUT STYLING */
     [data-testid="stTextInput"] { margin-bottom: 15px; }
@@ -569,6 +588,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
