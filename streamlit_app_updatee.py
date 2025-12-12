@@ -29,25 +29,32 @@ st.markdown("""
         background-color: #FAF9F6;
     }
 
-    /* A. SIDEBAR (KIRI): SEMUA TEKS WAJIB PUTIH */
-    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3,
-    [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label,
-    [data-testid="stSidebar"] div {
-        color: #FFFFFF !important;
-    }
-
-    /* B. KONTEN UTAMA (KANAN): JUDUL & PARAGRAF WAJIB HITAM (Supaya kebaca di Cream) */
-    .main h1, .main h2, .main h3, .main h4, 
-    .main p, .main li, .main label, .main .stMarkdown {
+    /* A. JUDUL & TEKS DI AREA TENGAH (ADMIN/PEMBELI) WAJIB HITAM */
+    /* Kita gunakan .block-container agar tidak bocor ke sidebar */
+    .block-container h1, 
+    .block-container h2, 
+    .block-container h3, 
+    .block-container h4, 
+    .block-container p, 
+    .block-container li, 
+    .block-container .stMarkdown,
+    .block-container label {
         color: #000000 !important;
     }
 
-    /* C. TOMBOL (PENYELAMAT): TEKS DI DALAM TOMBOL WAJIB PUTIH KEMBALI */
-    /* Ini akan menimpa aturan B khusus untuk teks di dalam tombol */
-    button p, 
-    div[role="button"] p, 
-    [data-testid="stBaseButton-secondary"] p,
-    [data-testid="stBaseButton-primary"] p {
+    /* B. SIDEBAR (MENU KIRI): SEMUA TEKS WAJIB PUTIH */
+    /* Gunakan selector * (bintang) untuk memaksa semua elemen di sidebar jadi putih */
+    [data-testid="stSidebar"] * {
+        color: #FFFFFF !important;
+    }
+    /* Kecuali input box di sidebar jika ada, kembalikan ke gelap agar terbaca (opsional) */
+    [data-testid="stSidebar"] input {
+        color: #333333 !important;
+    }
+
+    /* C. TOMBOL (BUTTON): WAJIB PUTIH */
+    /* Ini melindungi teks di dalam tombol agar tidak ikut jadi hitam */
+    button p, button div, .stButton button {
         color: #FFFFFF !important;
     }
         
@@ -618,6 +625,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
