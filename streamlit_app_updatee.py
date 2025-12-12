@@ -113,8 +113,33 @@ st.markdown("""
         width: 100% !important;
         margin-bottom: 10px;
     }
+/* ============================================================ */
+    /* 👇 PERBAIKAN KHUSUS ADMIN (TABEL JADI HITAM) 👇             */
+    /* ============================================================ */
+    
+    /* Memaksa semua teks dalam tabel berwarna HITAM */
+    [data-testid="stTable"], [data-testid="stDataFrame"] {
+        color: #000000 !important;
+    }
+
+    /* Header Tabel (Nama Kolom) */
+    div[data-testid="stTable"] th, div[data-testid="stDataFrame"] th {
+        color: #000000 !important;
+        background-color: #E0E0E0 !important; /* Abu-abu muda supaya header jelas */
+        border-bottom: 2px solid #000000 !important;
+    }
+
+    /* Isi Tabel (Data) */
+    div[data-testid="stTable"] td, div[data-testid="stDataFrame"] td {
+        color: #000000 !important;
+        background-color: transparent !important;
+        border-bottom: 1px solid #CCCCCC !important;
+    }
+    /* ============================================================ */
 </style>
 """, unsafe_allow_html=True)
+
+
 
 # URL Gambar
 IMG_LAVENDER = "https://i.pinimg.com/736x/1f/7a/b3/1f7ab3ca70a7368b15d124be258c3baa.jpg"
@@ -570,6 +595,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
