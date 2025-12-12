@@ -19,7 +19,7 @@ Rekindle adalah aplikasi e-commerce berbasis web untuk penjualan lilin aromatera
 - Pembeli akan otomatis dapat diskon sebesar 10% jika membeli total produk (meskipun beda jenis) sebanyak >= 3 buah dan 20% jika membeli >= 5 buah
 
 *User yang sudah terdaftar pada program secara default*
-Masukkan username dan password di bawah jika ingin membuka menu admin/pembeli (sesuai role):
+- Masukkan username dan password di bawah jika ingin membuka menu admin/pembeli (sesuai role):
 ```txt
 username = admin  
 password = 123  
