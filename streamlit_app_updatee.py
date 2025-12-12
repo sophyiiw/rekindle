@@ -29,24 +29,42 @@ st.markdown("""
         background-color: #FAF9F6;
     }
 
-    /* A. ATURAN UMUM: Semua Judul & Teks jadi HITAM (Untuk area utama) */
-    h1, h2, h3, h4, h5, h6, p, li, .stMarkdown {
+    /*  A. ATURAN UTAMA: TEKS KONTEN JADI HITAM               
+   
+    
+    /* Kita batasi hanya elemen di dalam container ".main" agar lebih aman */
+    .main h1, .main h2, .main h3, .main h4, .main h5, .main h6, 
+    .main p, .main li, .main .stMarkdown, .main label {
         color: #000000 !important;
     }
+
     
-    /* B. PENGECUALIAN: Khusus SIDEBAR (Menu Kiri) tulisan tetap PUTIH */
+    /*  PENGECUALIAN: SIDEBAR (MENU KIRI) TETAP PUTIH       
+    
+    
     [data-testid="stSidebar"] h1,
     [data-testid="stSidebar"] h2,
     [data-testid="stSidebar"] h3,
     [data-testid="stSidebar"] p,
     [data-testid="stSidebar"] span,
     [data-testid="stSidebar"] div,
-    [data-testid="stSidebar"] label {
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] li {
+        color: #FFFFFF !important;
+    }
+
+   
+    /*  FIX TOMBOL (LOGIN, DAFTAR, BELI) AGAR TIDAK HITAM   
+    /* Memaksa teks di dalam tombol apapun menjadi PUTIH kembali */
+    .stButton button, 
+    .stButton button p,
+    div[data-testid="stForm"] button,
+    div[data-testid="stForm"] button p {
         color: #FFFFFF !important;
     }
     
-    /* C. Fix Radio Button di Sidebar agar tetap terlihat */
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+    /* Efek Hover pada tombol (opsional, biar teks tetap putih saat disorot) */
+    .stButton button:hover p {
         color: #FFFFFF !important;
     }
         
@@ -617,6 +635,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
