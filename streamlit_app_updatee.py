@@ -218,7 +218,7 @@ def halaman_depan_split():
 # ============================
 def menu_admin():
     st.sidebar.title("Admin Panel")
-    menu = st.sidebar.radio("Menu", ["Stok", "Tambah", "Edit", "Role", "Penjualan", "Update Status", "Laporan", "Export", "Logout"])
+    menu = st.sidebar.radio("Menu", ["Stok", "Tambah", "Edit", "Kelola User", "Penjualan", "Update Status", "Laporan", "Export/Import", "Logout"])
     
     if menu == "Stok":
         st.title("Gudang")
@@ -242,12 +242,39 @@ def menu_admin():
             ns = st.number_input("Stok", value=p.get_stok())
             if st.button("Update"): p.set_nama(nn); p.set_harga(nh); p.set_stok(ns); st.success("Updated")
 
-    elif menu == "Role":
-        st.title("Kelola User")
-        users = list(st.session_state['users_db'].keys())
-        u = st.selectbox("User", users)
-        if st.button("Jadikan Admin"): st.session_state['users_db'][u].role = "admin"; st.success("Role diubah ke Admin")
+     elif menu == "Kelola User":
+        list_users = list(st.session_state.users_db.keys())
+        target_username = st.selectbox("Pilih User", list_users)
+        
+        user_obj = st.session_state.users_db[target_username]
+        st.write(f"Role saat ini: **{user_obj.role}** | Password: **{user_obj.password}**")
 
+        opsi_edit = st.selectbox("Mau edit apa?", ["Role", "Password", "Rename User"])
+        
+        if opsi_edit == "Role":
+            role_baru = st.selectbox("Pilih Role Baru", ["admin", "pembeli"])
+            if st.button("Simpan Role"):
+                user_obj.role = role_baru
+                st.success("Role berubah.")
+        
+        elif opsi_edit == "Password":
+            pass_baru = st.text_input("Password Baru")
+            if st.button("Simpan Password"):
+                user_obj.password = pass_baru
+                st.success("Password berubah.")
+
+        elif opsi_edit == "Rename User":
+            nama_baru = st.text_input("Username Baru")
+            if st.button("Ganti Username"):
+                if nama_baru in st.session_state.users_db:
+                    st.error("Nama sudah dipakai!")
+                else:
+                    user_obj.username = nama_baru
+                    st.session_state.users_db[nama_baru] = user_obj
+                    del st.session_state.users_db[target_username]
+                    st.success(f"Berubah menjadi {nama_baru}")
+                    st.rerun()
+                    
     elif menu == "Penjualan":
         st.title("Riwayat Penjualan")
         st.dataframe(st.session_state['riwayat_transaksi'])
@@ -272,13 +299,88 @@ def menu_admin():
                 b = st.text_input(f"Jawab #{i}", key=f"b{i}")
                 if st.button("Kirim Balasan", key=f"k{i}"): m['jawaban'] = b; st.success("Terkirim")
 
-    elif menu == "Export":
-        st.title("Export Data")
-        csv_data = convert_to_csv(st.session_state['produk_list'], ['Nama','Harga','Stok'], 'produk')
-        st.download_button("Download CSV Produk", csv_data, "produk.csv")
+    elif menu == "Export/Import":
+        st.subheader("📥 Export Data (Download)")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # 1. Export User
+            csv_users = convert_to_csv(st.session_state.users_db, ['Username', 'Password', 'Role'], 'user')
+            st.download_button("Download Data User", csv_users, "data_users.csv", "text/csv")
+            
+            # 2. Export Produk
+            csv_produk = convert_to_csv(st.session_state.produk_list, ['Nama Produk', 'Harga', 'Stok'], 'produk')
+            st.download_button("Download Data Produk", csv_produk, "data_produk.csv", "text/csv")
 
-    elif menu == "Logout":
-        st.session_state['user_role'] = None; st.rerun()
+        with col2:
+            # 3. Export Penjualan
+            if st.session_state.riwayat_transaksi:
+                csv_sales = convert_dict_list_to_csv(st.session_state.riwayat_transaksi, ['pembeli', 'barang', 'qty', 'total', 'status'])
+                st.download_button("Download Data Penjualan", csv_sales, "data_penjualan.csv", "text/csv")
+            else:
+                st.button("Data Penjualan Kosong", disabled=True)
+
+            # 4. Export Laporan 
+            if st.session_state.inbox_laporan:
+                csv_laporan = convert_dict_list_to_csv(st.session_state.inbox_laporan, ['pengirim', 'pesan', 'jawaban'])
+                st.download_button("Download Data Laporan", csv_laporan, "data_laporan.csv", "text/csv")
+            else:
+                st.button("Data Laporan Kosong", disabled=True)
+
+        st.divider()
+        
+        st.subheader("📤 Import Data (Upload)")
+        uploaded_file = st.file_uploader("Upload File CSV")
+        
+        if uploaded_file is not None:
+            # Pilihan ditambah Laporan
+            tipe_import = st.selectbox("Ini file apa?", ["User", "Produk", "Penjualan", "Laporan"])
+            
+            if st.button("Proses Import"):
+                try:
+                    stringio = io.StringIO(uploaded_file.getvalue().decode("utf-8"))
+                    
+                    # --- IMPORT USER ---
+                    if tipe_import == "User":
+                        reader = csv.reader(stringio)
+                        next(reader) # skip header
+                        st.session_state.users_db.clear()
+                        for row in reader:
+                            st.session_state.users_db[row[0]] = User(row[0], row[1], row[2])
+                        st.success("Import User Sukses!")
+
+                    # --- IMPORT PRODUK ---
+                    elif tipe_import == "Produk":
+                        reader = csv.reader(stringio)
+                        next(reader)
+                        st.session_state.produk_list.clear()
+                        for row in reader:
+                            # row[0]=nama, row[1]=harga, row[2]=stok
+                            st.session_state.produk_list.append(ProdukLilin(row[0], int(row[1]), int(row[2])))
+                        st.success("Import Produk Sukses!")
+                    
+                    # --- IMPORT PENJUALAN ---
+                    elif tipe_import == "Penjualan":
+                        reader = csv.DictReader(stringio)
+                        st.session_state.riwayat_transaksi.clear()
+                        for row in reader:
+                            row['qty'] = int(row['qty'])
+                            row['total'] = int(row['total'])
+                            st.session_state.riwayat_transaksi.append(row)
+                        st.success("Import Penjualan Sukses!")
+
+                    # --- IMPORT LAPORAN  ---
+                    elif tipe_import == "Laporan":
+                        reader = csv.DictReader(stringio)
+                        st.session_state.inbox_laporan.clear()
+                        for row in reader:
+                            st.session_state.inbox_laporan.append(row)
+                        st.success("Import Laporan Sukses!")
+
+                except Exception as e:
+                    st.error(f"Gagal Import: {e}")
+
 
 # ============================
 # 6. HALAMAN PEMBELI
@@ -437,3 +539,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
