@@ -437,10 +437,10 @@ def menu_admin():
                 except Exception as e:
                     st.error(f"Gagal Import: {e}")
 
-     elif menu == "Logout":
+    elif menu == "Logout":
         st.session_state['keranjang'] = []
         st.session_state['user_role'] = None; st.session_state['user_login'] = ""; st.rerun()
-# ============================
+        
 # 6. HALAMAN PEMBELI
 # ============================
 def menu_pembeli(user):
@@ -597,6 +597,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
