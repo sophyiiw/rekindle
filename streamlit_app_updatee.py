@@ -233,10 +233,33 @@ def menu_admin():
     
     elif menu == "Tambah":
         st.title("Tambah Produk")
-        n = st.text_input("Nama"); h = st.number_input("Harga"); s = st.number_input("Stok")
-        if st.button("Simpan"): 
-            st.session_state['produk_list'].append(ProdukLilin(n, int(h), int(s), "https://via.placeholder.com/150"))
-            st.success("Tersimpan")
+        
+        with st.form("form_tambah_produk"):
+            n = st.text_input("Nama Produk")
+            h = st.number_input("Harga (Rp)", min_value=0, step=500)
+            s = st.number_input("Stok Awal", min_value=0, step=1)
+            
+            # 1. Tambahkan Widget File Uploader
+            uploaded_file = st.file_uploader("Upload Gambar Produk", type=['png', 'jpg', 'jpeg'])
+            
+            submit = st.form_submit_button("Simpan Produk")
+
+            if submit:
+                if n and h > 0:
+                    # 2. Logika Penentuan Gambar
+                    # Jika ada file diupload, pakai file itu. Jika tidak, pakai gambar default.
+                    gambar_final = "https://via.placeholder.com/150" # Default jika kosong
+                    
+                    if uploaded_file is not None:
+                        gambar_final = uploaded_file # Simpan objek file langsung
+                    
+                    # 3. Masukkan ke database session
+                    st.session_state['produk_list'].append(
+                        ProdukLilin(n, int(h), int(s), gambar_final)
+                    )
+                    st.success(f"Berhasil menambahkan {n}!")
+                else:
+                    st.error("Nama tidak boleh kosong dan Harga harus > 0")
 
     elif menu == "Edit":
         st.title("Edit Produk")
@@ -546,5 +569,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
