@@ -29,14 +29,25 @@ st.markdown("""
         background-color: #FAF9F6;
     }
 
-/* Memaksa Judul Besar (seperti 'Gudang', 'Tambah Produk') jadi Hitam */
-    h1, h2, h3, h4, h5, h6 {
+    /* A. ATURAN UMUM: Semua Judul & Teks jadi HITAM (Untuk area utama) */
+    h1, h2, h3, h4, h5, h6, p, li, .stMarkdown {
         color: #000000 !important;
     }
-
-    /* Memaksa teks biasa dan label widget jadi Hitam/Abu Gelap */
-    p, .stMarkdown, label, div[data-testid="stWidgetLabel"] {
-        color: #333333 !important;
+    
+    /* B. PENGECUALIAN: Khusus SIDEBAR (Menu Kiri) tulisan tetap PUTIH */
+    [data-testid="stSidebar"] h1,
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3,
+    [data-testid="stSidebar"] p,
+    [data-testid="stSidebar"] span,
+    [data-testid="stSidebar"] div,
+    [data-testid="stSidebar"] label {
+        color: #FFFFFF !important;
+    }
+    
+    /* C. Fix Radio Button di Sidebar agar tetap terlihat */
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+        color: #FFFFFF !important;
     }
         
     /* INPUT STYLING */
@@ -606,6 +617,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
