@@ -149,6 +149,13 @@ def cari_produk(nama):
         if p.get_nama().lower() == nama.lower(): return p
     return None
 
+def convert_dict_list_to_csv(data, fieldnames):
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=fieldnames)
+    writer.writeheader()
+    writer.writerows(data)
+    return output.getvalue()
+
 def convert_to_csv(data, header, type='list_obj'):
     output = io.StringIO(); writer = csv.writer(output); writer.writerow(header)
     if type == 'user':
@@ -242,7 +249,7 @@ def menu_admin():
             ns = st.number_input("Stok", value=p.get_stok())
             if st.button("Update"): p.set_nama(nn); p.set_harga(nh); p.set_stok(ns); st.success("Updated")
 
-     elif menu == "Kelola User":
+    elif menu == "Kelola User":
         list_users = list(st.session_state.users_db.keys())
         target_username = st.selectbox("Pilih User", list_users)
         
@@ -539,4 +546,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
